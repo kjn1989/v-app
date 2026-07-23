@@ -262,6 +262,9 @@ input{font-family:inherit;}
 .court-tabs{display:flex; gap:8px; margin:8px 0; flex:0 0 auto;}
 .court-tabs button{flex:1; padding:8px; border-radius:10px; background:var(--ink-2); border:1px solid var(--line); font-weight:800;}
 .court-tabs button.active{background:var(--home); border-color:var(--home); color:#241205;}
+.court-score-head{display:flex; align-items:center; gap:10px; padding:10px 14px; border-radius:12px; background:var(--ink-2); border:1px solid var(--line); border-left:4px solid var(--acc,#888); margin:8px 0 6px; flex:0 0 auto;}
+.court-score-head .csh-t{font-weight:800; font-size:1rem;}
+.court-score-head .csh-s{font-size:.74rem; color:var(--muted); margin-top:2px;}
 
 /* record view fills the screen; summary can scroll */
 #courtRecord{display:flex; flex-direction:column; flex:1 1 auto; min-height:0;}
@@ -358,6 +361,16 @@ input{font-family:inherit;}
 .hist-detail{margin:6px 0 14px;}
 .hd-sets{display:flex; flex-direction:column; gap:6px; font-variant-numeric:tabular-nums;}
 .hd-sets .r{display:flex; justify-content:space-between; padding:8px 12px; background:var(--ink); border-radius:9px; border:1px solid var(--line);}
+/* 得点の経過 */
+.plog{display:flex; flex-direction:column; gap:5px; margin-top:6px;}
+.plog-set{font-size:.76rem; font-weight:800; color:var(--muted); margin:10px 0 3px; letter-spacing:.03em;}
+.plog-row{display:flex; align-items:center; gap:12px; padding:7px 10px; border-radius:9px; background:var(--ink); border:1px solid var(--line); border-left:4px solid var(--line);}
+.plog-row.l{border-left-color:var(--home);}
+.plog-row.r{border-left-color:var(--away); flex-direction:row-reverse; text-align:right;}
+.plog-sc{font-weight:800; font-variant-numeric:tabular-nums; min-width:52px; text-align:center; font-size:.95rem;}
+.plog-sc span{color:var(--muted); margin:0 2px;}
+.plog-how{flex:1; min-width:0; font-size:.85rem; line-height:1.35;}
+.plog-how b{font-weight:800;}
 
 /* offscreen share render */
 #shareCard{position:fixed; left:-9999px; top:0; width:720px;}
@@ -447,21 +460,6 @@ input{font-family:inherit;}
       <div class="lead">だれの得点？</div>
       <div class="playergrid" id="playerGrid"></div>
     </div>
-    <div id="actStep3" class="actstep2" style="display:none">
-      <div class="backrow"><button id="actBack3">← もどる</button><span id="act3Label"></span></div>
-      <div id="msDir">
-        <div class="ms-hl">相手コート（どこへ）</div>
-        <div class="half opp ms" id="msOpp"></div>
-        <div class="net-line"><span>ネット</span></div>
-        <div class="half own ms" id="msOwn"></div>
-        <div class="ms-hl">自コート（どこから）</div>
-      </div>
-      <div id="msBlock" style="display:none">
-        <div class="ms-hl">どこでブロック？（ネット際）</div>
-        <div class="ms-blockrow" id="msBlockRow"></div>
-      </div>
-      <div class="court-status" id="act3Status"></div>
-    </div>
   </div>
 </div>
 
@@ -531,6 +529,7 @@ input{font-family:inherit;}
   </div>
 
   <div id="courtRecord">
+    <div class="court-score-head" id="courtScoreHead" style="display:none"></div>
     <div class="server-pick">
       <div class="sp-side" id="courtSideToggle"></div>
       <div class="sp-label" id="pickLabel">サーバーを選ぶ</div>
@@ -540,12 +539,16 @@ input{font-family:inherit;}
       <div class="sp-label">攻撃の種類</div>
       <div class="type-chips" id="typeChips"></div>
     </div>
-    <div class="court-field">
+    <div class="court-field" id="courtField">
       <div class="half-label" id="halfLabelTop">相手コート（狙った場所）</div>
       <div class="half opp" id="halfOpp"></div>
       <div class="net-line"><span>ネット</span></div>
       <div class="half own" id="halfOwn"></div>
       <div class="half-label own-l" id="halfLabelBottom">自コート（サーブ位置）</div>
+    </div>
+    <div id="courtBlockPick" style="display:none">
+      <div class="ms-hl">どこでブロックした？（ネット際）</div>
+      <div class="ms-blockrow" id="courtBlockRow"></div>
     </div>
     <div class="result-row" id="resultRow"></div>
     <div class="court-status" id="courtStatus"></div>
@@ -667,12 +670,8 @@ function isDecidingSet(){ const n=setsToWin(); return state.bestOf>1 && state.te
 function targetPoints(){ return isDecidingSet()?state.decidingPoints:state.pointsPerSet; }
 
 /* ---------- scoring ---------- */
-// t = scoring team; kind = terminal action; actorTeam = team of the credited/debited player; player = key or null
-// extraPlay: optional 配球 play recorded together (direction), so undo reverts both
-function addPoint(t, kind, player, actorTeam, extraPlay){
-  if(state.matchOver) return;
-  snapshot();
-  if(extraPlay) state.plays.push(extraPlay);
+// core scoring (no snapshot): push event + increment + set logic
+function applyPoint(t, kind, player, actorTeam){
   state.events.push({set:state.setNumber, team:t, kind:kind||"point",
     actorTeam:(actorTeam===0||actorTeam===1)?actorTeam:null, player:(player!=null?player:null)});
   const team=state.teams[t];
@@ -681,6 +680,13 @@ function addPoint(t, kind, player, actorTeam, extraPlay){
   checkCourtSwitch();
   const tgt=targetPoints(), opp=state.teams[1-t].points;
   if(team.points>=tgt && team.points-opp>=state.winBy) completeSet(t);
+}
+// t = scoring team; extraPlay = optional 配球 play recorded together, so undo reverts both
+function addPoint(t, kind, player, actorTeam, extraPlay){
+  if(state.matchOver) return;
+  snapshot();
+  if(extraPlay) state.plays.push(extraPlay);
+  applyPoint(t, kind, player, actorTeam);
   commit();
 }
 function minusPoint(t){
@@ -745,18 +751,19 @@ function openActionPanel(t){
   document.getElementById("actErrLabel").textContent = `相手（${state.teams[1-t].name}）のミスで得点`;
   document.getElementById("actStep1").style.display="";
   document.getElementById("actStep2").style.display="none";
-  document.getElementById("actStep3").style.display="none";
   actWrap.classList.add("show");
 }
-function closeActionPanel(){ actWrap.classList.remove("show"); actTeam=null; pend=null; }
+function closeActionPanel(){ actWrap.classList.remove("show"); actTeam=null; }
 const DIR_KINDS=["serve_ace","spike_kill","block"];   // これらは方向記録(dirInput)の対象
-let pend=null, ms3From=null, ms3To=null;
 
 function chooseAction(kind){
   const t=actTeam;
   if(NOPLAYER_KINDS.includes(kind)){ closeActionPanel(); addPoint(t,kind,null,null); return; }
+  // 方向記録ON かつ 方向のある得点 → フルのコート画面（配球記録）を開いて 選手＋どこから→どこへ を選ぶ
+  if(state.dirInput && DIR_KINDS.includes(kind)){ closeActionPanel(); openCourtScore(t, kind); return; }
+  // それ以外は パネル内で選手を選ぶ
   const actorTeam = POS_KINDS.includes(kind) ? t : 1-t;
-  if(!state.rosters[actorTeam] || state.rosters[actorTeam].length===0){ pickPlayer(kind,null,actorTeam); return; }
+  if(!state.rosters[actorTeam] || state.rosters[actorTeam].length===0){ closeActionPanel(); addPoint(t,kind,null,actorTeam); return; }
   document.getElementById("actKindLabel").textContent = KIND_LABEL[kind]||"";
   buildPlayerGrid(kind, actorTeam);
   document.getElementById("actStep2").querySelector(".lead").textContent =
@@ -777,62 +784,8 @@ function buildPlayerGrid(kind, actorTeam){
   u.addEventListener("click",()=>pickPlayer(kind, null, actorTeam));
   grid.appendChild(u);
 }
-// after player is chosen: go to direction step if enabled & directional, else score immediately
-function pickPlayer(kind, player, actorTeam){
-  if(state.dirInput && DIR_KINDS.includes(kind)){ openStep3(kind, player, actorTeam); }
-  else { const t=actTeam; closeActionPanel(); addPoint(t,kind,player,actorTeam); }
-}
-function openStep3(kind, player, actorTeam){
-  pend={ t:actTeam, kind, player, actorTeam }; ms3From=null; ms3To=null;
-  const isBlock = kind==="block";
-  document.getElementById("msDir").style.display = isBlock?"none":"";
-  document.getElementById("msBlock").style.display = isBlock?"":"none";
-  document.getElementById("act3Label").textContent = KIND_LABEL[kind]||"";
-  if(isBlock){ buildBlockRow(); }
-  else { buildMsZones("msOpp","opp"); buildMsZones("msOwn","own"); }
-  updateAct3Status();
-  document.getElementById("actStep1").style.display="none";
-  document.getElementById("actStep2").style.display="none";
-  document.getElementById("actStep3").style.display="";
-}
-function buildMsZones(id,court){
-  const el=document.getElementById(id); el.innerHTML="";
-  for(let z=0;z<9;z++){ const b=document.createElement("button"); b.className="zone"; b.dataset.z=z;
-    b.innerHTML=`<span class="hmn">${z+1}</span>`;
-    b.addEventListener("click",()=>{ if(court==="own") ms3From=z; else ms3To=z; paintMsZones(); tryFinalizeDir(); });
-    el.appendChild(b); }
-  paintMsZones();
-}
-function paintMsZones(){
-  document.querySelectorAll("#msOwn .zone").forEach(el=>el.classList.toggle("sel-from",+el.dataset.z===ms3From));
-  document.querySelectorAll("#msOpp .zone").forEach(el=>el.classList.toggle("sel-to",+el.dataset.z===ms3To));
-  updateAct3Status();
-}
-function buildBlockRow(){
-  const el=document.getElementById("msBlockRow"); el.innerHTML="";
-  ["左","中","右"].forEach((lab,i)=>{ const b=document.createElement("button"); b.textContent=lab;
-    b.addEventListener("click",()=>finalizeBlock(i)); el.appendChild(b); });
-}
-function updateAct3Status(){
-  const st=document.getElementById("act3Status");
-  if(pend && pend.kind==="block"){ st.textContent="ブロックした位置をタップ"; return; }
-  st.textContent=[ ms3From!=null?`位置${ms3From+1}`:"① 自コート（どこから）", ms3To!=null?`→ ${ms3To+1}`:"→② 相手コート（どこへ）" ].join(" ・ ");
-}
-function tryFinalizeDir(){
-  if(ms3From==null || ms3To==null) return;
-  const skill = pend.kind==="serve_ace" ? "serve" : "spike";
-  const play={id:"pl"+Date.now(), set:state.setNumber, skill, team:pend.t, player:pend.player, from:ms3From, to:ms3To, result: skill==="serve"?"ace":"kill"};
-  if(skill==="spike") play.type=null;
-  finalizeScore(play);
-}
-function finalizeBlock(loc){
-  finalizeScore({id:"pl"+Date.now(), set:state.setNumber, skill:"block", team:pend.t, player:pend.player, from:null, to:loc, result:"kill"});
-}
-function finalizeScore(play){
-  const {t,kind,player,actorTeam}=pend; pend=null;
-  closeActionPanel();
-  addPoint(t, kind, player, actorTeam, play);   // 得点＋配球を同時記録（undoで両方戻る）
-}
+// modal player pick (相手ミス、または方向記録OFF時の得点) → そのまま加点
+function pickPlayer(kind, player, actorTeam){ const t=actTeam; closeActionPanel(); addPoint(t,kind,player,actorTeam); }
 
 /* ---------- stats ---------- */
 function playerStats(t){
@@ -949,13 +902,25 @@ function renderStats(){
     <div style="overflow-x:auto"><table class="stbl">
       <thead><tr><th>選手</th><th>得点</th><th>決定率</th><th>決定</th><th>ﾐｽ</th><th>ﾌﾞﾛｯｸ</th><th>ｴｰｽ</th><th>ｻｰﾌﾞ失</th></tr></thead>
       <tbody>${body_rows}</tbody></table></div>
-    <p class="hint" style="margin-top:14px">決定率＝決定 ÷（決定＋スパイクミス）。試行0本は「-」。「得点」＝スパイク＋ブロック＋サービスエース。相手ミス・未記録分はチーム総得点にのみ入ります。被ブロックや配球の詳細は「🏐配球」で記録します。</p>`;
+    <p class="hint" style="margin-top:14px">決定率＝決定 ÷（決定＋スパイクミス）。試行0本は「-」。「得点」＝スパイク＋ブロック＋サービスエース。相手ミス・未記録分はチーム総得点にのみ入ります。被ブロックや配球の詳細は「🏐配球」で記録します。</p>
+    <div class="sp-label" style="margin-top:16px">得点の経過（1点ずつ）</div>
+    ${renderPointLog(state.events, state.teams, state.rosters)}`;
 }
 
 /* ---------- court charting (配球記録: サーブ / スパイク) ---------- */
 const courtWrap=document.getElementById("courtWrap");
 let courtSide=0, courtSkill="serve", courtPlayer=null, selType=null, selFrom=null, selTo=null, summaryFilter=null;
+let courtMode="chart", scoreCtx=null;   // chart=🏐配球ボタン / score=得点入力から開く
 
+// 配球の結果から「誰が得点したか」を求める（us=記録中のチーム）。nullなら得点なし（効果/成功/つながれた等）
+function scoreOf(skill, result, us){
+  if(skill==="serve"){ if(result==="ace") return {t:us, kind:"serve_ace", actorTeam:us};
+    if(result==="miss") return {t:1-us, kind:"serve_err", actorTeam:us}; return null; }
+  if(skill==="spike"){ if(result==="kill") return {t:us, kind:"spike_kill", actorTeam:us};
+    if(result==="blocked"||result==="miss") return {t:1-us, kind:"spike_err", actorTeam:us}; return null; }
+  if(skill==="block"){ return {t:us, kind:"block", actorTeam:us}; }
+  return null;
+}
 function cnt(ps,k){ return ps.filter(x=>x.result===k).length; }
 function rate(a,b){ return b>0 ? Math.round(a/b*100)+"%" : '<span style="color:#5b6c80">-</span>'; }
 const SKILLS={
@@ -980,15 +945,29 @@ const HEAT=["#3a5f78","#2f9e9b","#d99a34","#d9534f"];
 function heatColor(c,max){ if(c<=0) return "rgba(255,255,255,.03)"; const r=c/max;
   return r<=0.25?HEAT[0]:r<=0.5?HEAT[1]:r<=0.75?HEAT[2]:HEAT[3]; }
 
+// 🏐配球ボタン: 記録モード
 function openCourt(){
+  courtMode="chart"; scoreCtx=null;
   courtSide = state.rosters[0].length ? 0 : (state.rosters[1].length ? 1 : 0);
   courtSkill="serve"; resetEntry();
   buildZones("halfOpp","opp"); buildZones("halfOwn","own");
-  applySkill(); renderServerControls();
+  configureMode(); applySkill(); renderServerControls();
   setCourtView("record");
   courtWrap.classList.add("show");
 }
-function closeCourt(){ courtWrap.classList.remove("show"); }
+// 得点入力から: サーブ/スパイク/ブロックの方向を選んで得点＋配球を同時記録
+function openCourtScore(t, kind){
+  courtMode="score"; scoreCtx={t, kind};
+  courtSide=t; courtSkill = kind==="serve_ace"?"serve" : kind==="spike_kill"?"spike" : "block";
+  resetEntry();
+  buildZones("halfOpp","opp"); buildZones("halfOwn","own");
+  configureMode();
+  if(courtSkill!=="block") applySkill();
+  renderServerControls();
+  setCourtView("record");
+  courtWrap.classList.add("show");
+}
+function closeCourt(){ courtWrap.classList.remove("show"); courtMode="chart"; scoreCtx=null; }
 function resetEntry(){ courtPlayer=null; selType=null; selFrom=null; selTo=null; }
 function setCourtView(v){
   document.querySelectorAll("#courtTabs button").forEach(b=>b.classList.toggle("active", b.dataset.cv===v));
@@ -996,15 +975,39 @@ function setCourtView(v){
   document.getElementById("courtSummary").style.display = v==="summary"?"":"none";
   if(v==="summary"){ summaryFilter=null; renderSummary(); }
 }
+// score/chart でUIを切り替え
+function configureMode(){
+  const score = courtMode==="score", isBlock = courtSkill==="block";
+  document.getElementById("courtSkill").style.display = score?"none":"";
+  document.getElementById("courtTabs").style.display = score?"none":"";
+  document.getElementById("courtSideToggle").style.display = score?"none":"";
+  document.getElementById("resultRow").style.display = score?"none":"";
+  document.getElementById("courtUndo").style.display = score?"none":"";
+  document.getElementById("courtClose2").textContent = score?"キャンセル":"閉じる";
+  document.getElementById("courtSkillName").textContent = score?"得点＋方向":"配球記録";
+  const acc = courtSide===0?getCss("--home"):getCss("--away");
+  document.getElementById("courtScoreHead").style.setProperty("--acc", acc);
+  const head=document.getElementById("courtScoreHead");
+  if(score){
+    const label={serve_ace:"サービスエース",spike_kill:"スパイク（決定）",block:"ブロック"}[scoreCtx.kind];
+    head.style.display=""; head.innerHTML=`<div><div class="csh-t">${esc(state.teams[courtSide].name)} 得点：${label}</div>
+      <div class="csh-s">${isBlock?"だれが・どこでブロックしたかを選ぶと得点します":"だれが・どこから→どこへ を選ぶと得点します"}</div></div>`;
+  } else head.style.display="none";
+  // block は専用UI（左/中/右）
+  document.getElementById("courtField").style.display = isBlock?"none":"";
+  document.getElementById("courtBlockPick").style.display = isBlock?"":"none";
+  document.getElementById("typePick").style.display = (isBlock||courtSkill==="serve")?"none":"";
+  document.getElementById("pickLabel").textContent = isBlock?"だれがブロック？":(courtSkill==="serve"?"サーバーを選ぶ":"アタッカーを選ぶ");
+  if(isBlock) buildCourtBlockRow();
+}
 function setSkill(s){
   courtSkill=s; resetEntry(); applySkill(); renderServerControls();
   if(document.getElementById("courtSummary").style.display!=="none"){ summaryFilter=null; renderSummary(); }
 }
 function applySkill(){
-  const cfg=skillCfg();
-  document.getElementById("courtSkillName").textContent=cfg.name;
+  const cfg=skillCfg(); if(!cfg) return;
   document.querySelectorAll("#courtSkill button").forEach(b=>b.classList.toggle("active", b.dataset.skill===courtSkill));
-  document.getElementById("pickLabel").textContent=cfg.pickLabel;
+  if(courtMode!=="score") document.getElementById("pickLabel").textContent=cfg.pickLabel;
   document.getElementById("halfLabelTop").textContent=cfg.topLabel;
   document.getElementById("halfLabelBottom").textContent=cfg.bottomLabel;
   const tp=document.getElementById("typePick");
@@ -1013,6 +1016,11 @@ function applySkill(){
   cfg.results.forEach(r=>{ const b=document.createElement("button"); b.className="rb "+r.c; b.dataset.res=r.k;
     b.innerHTML=`${r.t}<span>${r.s}</span>`; b.addEventListener("click",()=>recordPlay(r.k)); rr.appendChild(b); });
   paintZones(); updateResultRow(); updateCourtStatus();
+}
+function buildCourtBlockRow(){
+  const el=document.getElementById("courtBlockRow"); el.innerHTML="";
+  ["左","中","右"].forEach((lab,i)=>{ const b=document.createElement("button"); b.textContent=lab;
+    b.addEventListener("click",()=>{ if(courtPlayer==null){ toast("先にブロックした選手を選んでください"); return; } finalizeScoreBlock(i); }); el.appendChild(b); });
 }
 function renderTypeChips(types){
   const el=document.getElementById("typeChips"); el.innerHTML="";
@@ -1029,9 +1037,10 @@ function buildZones(id, court){
   }
 }
 function onZoneTap(court, z){
-  if(courtPlayer==null){ toast(`先に${courtSkill==="serve"?"サーバー":"アタッカー"}を選んでください`); return; }
+  if(courtPlayer==null && state.rosters[courtSide].length){ toast(`先に${courtSkill==="serve"?"サーバー":"アタッカー"}を選んでください`); return; }
   if(court==="own") selFrom=z; else selTo=z;
   paintZones(); updateResultRow(); updateCourtStatus();
+  if(courtMode==="score" && selFrom!=null && selTo!=null) finalizeScoreDir();
 }
 function paintZones(){
   document.querySelectorAll("#halfOwn .zone").forEach(el=>el.classList.toggle("sel-from", +el.dataset.z===selFrom));
@@ -1042,12 +1051,13 @@ function updateResultRow(){
 }
 function updateCourtStatus(){
   const st=document.getElementById("courtStatus");
-  if(courtPlayer==null){ st.textContent=`${courtSkill==="serve"?"サーバー":"アタッカー"}を選び、① 自コートの位置 →② 相手コート をタップ`; return; }
-  const parts=[`${keyLabel(courtSide,courtPlayer)}`];
+  if(courtSkill==="block"){ st.textContent = (courtPlayer==null && state.rosters[courtSide].length)?"ブロックした選手を選ぶ":"どこでブロックしたか（左/中/右）をタップ"; return; }
+  if(courtPlayer==null && state.rosters[courtSide].length){ st.textContent=`${courtSkill==="serve"?"サーバー":"アタッカー"}を選び、① 自コートの位置 →② 相手コート をタップ`; return; }
+  const parts=[courtPlayer!=null?keyLabel(courtSide,courtPlayer):"（選手なし）"];
   if(courtSkill==="spike" && selType) parts.push(selType);
   parts.push(selFrom!=null?`位置${selFrom+1}`:"① 自コートの位置");
   parts.push(selTo!=null?`→ ${selTo+1}`:"→② 相手コート");
-  if(selFrom!=null && selTo!=null) parts.push("→ 結果を選ぶ");
+  if(courtMode!=="score" && selFrom!=null && selTo!=null) parts.push("→ 結果を選ぶ");
   st.textContent=parts.join(" ・ ");
 }
 function renderServerControls(){
@@ -1070,23 +1080,38 @@ function renderServerControls(){
     chips.appendChild(c);
   });
 }
+// 🏐配球（記録モード）: 配球を記録し、結果に応じて得点にも反映
 function recordPlay(result){
-  if(courtPlayer==null||selFrom==null||selTo==null) return;
+  if(selFrom==null||selTo==null) return;
   const play={id:"pl"+Date.now(), set:state.setNumber, skill:courtSkill, team:courtSide, player:courtPlayer, from:selFrom, to:selTo, result};
   if(courtSkill==="spike") play.type=selType||null;
-  state.plays.push(play); persist();
+  const sc=scoreOf(courtSkill, result, courtSide);
+  snapshot();
+  state.plays.push(play);
+  if(sc) applyPoint(sc.t, sc.kind, courtPlayer, sc.actorTeam);
+  commit();
   const rl=skillCfg().results.find(r=>r.k===result).t;
-  toast(`記録：${keyLabel(courtSide,courtPlayer)} ${skillCfg().name}${courtSkill==="spike"&&selType?"("+selType+")":""} ${rl}`);
-  selFrom=null; selTo=null; paintZones(); updateResultRow(); updateCourtStatus();   // keep player & type for quick repeat
+  toast(`記録：${courtPlayer!=null?keyLabel(courtSide,courtPlayer)+" ":""}${skillCfg().name}${courtSkill==="spike"&&selType?"("+selType+")":""} ${rl}${sc?"（得点）":""}`);
+  selFrom=null; selTo=null; paintZones(); updateResultRow(); updateCourtStatus();
+  if(state.matchOver) closeCourt();
 }
-function undoPlay(){
-  for(let i=state.plays.length-1;i>=0;i--){
-    if(state.plays[i].skill===courtSkill && state.plays[i].team===courtSide){
-      const r=state.plays.splice(i,1)[0]; persist(); toast(`取り消しました（${keyLabel(courtSide,r.player)} ${skillCfg().name}）`); return;
-    }
-  }
-  toast("取り消せる記録がありません");
+// 得点入力から: 方向を選んだら得点＋配球を同時に確定してコートを閉じる
+function finalizeScoreDir(){
+  const skill=courtSkill, result= skill==="serve"?"ace":"kill";
+  const play={id:"pl"+Date.now(), set:state.setNumber, skill, team:courtSide, player:courtPlayer, from:selFrom, to:selTo, result};
+  if(skill==="spike") play.type=selType||null;
+  addPoint(scoreCtx.t, scoreCtx.kind, courtPlayer, scoreCtx.t, play);
+  toast(`${courtPlayer!=null?keyLabel(courtSide,courtPlayer)+" ":""}${skill==="serve"?"サービスエース":"スパイク"}（得点）`);
+  closeCourt();
 }
+function finalizeScoreBlock(loc){
+  const play={id:"pl"+Date.now(), set:state.setNumber, skill:"block", team:courtSide, player:courtPlayer, from:null, to:loc, result:"kill"};
+  addPoint(scoreCtx.t, "block", courtPlayer, scoreCtx.t, play);
+  toast(`${courtPlayer!=null?keyLabel(courtSide,courtPlayer)+" ":""}ブロック（得点）`);
+  closeCourt();
+}
+// 「直前を取り消す」= 直近の記録（配球＋得点）をまとめて取り消し
+function undoPlay(){ if(!history.length){ toast("取り消せる記録がありません"); return; } undo(); paintZones(); updateResultRow(); updateCourtStatus(); renderServerControls(); }
 function renderSummary(){
   const team=courtSide, skill=courtSkill, cfg=SKILLS[skill], body=document.getElementById("summaryBody");
   const sc=document.getElementById("summaryChips"); sc.innerHTML="";
@@ -1117,6 +1142,37 @@ function renderSummary(){
     <div class="half opp" style="margin-top:4px">${heat}</div>
     <div class="hm-key"><span>少</span><i style="background:${HEAT[0]}"></i><i style="background:${HEAT[1]}"></i><i style="background:${HEAT[2]}"></i><i style="background:${HEAT[3]}"></i><span>多</span></div>
     <div class="hm-legend">${cfg.legend}</div>`;
+}
+
+/* ---------- 得点の経過（1点ずつの記録） ---------- */
+function keyLabelR(rostersArr, team, key){
+  const p=(rostersArr&&rostersArr[team]||[]).find(x=>((x.num&&String(x.num).trim())?String(x.num).trim():x.pid)===key);
+  return p?(p.num||p.name||"?"):"?";
+}
+const EV_LABEL={spike_kill:"スパイク", block:"ブロック", serve_ace:"サービスエース", spike_err:"スパイクミス", serve_err:"サーブミス", foul:"反則・その他", point:"得点"};
+function describeEvent(ev, teams, rostersArr){
+  const by=teams[ev.team].name;
+  const plab = ev.player!=null ? keyLabelR(rostersArr, ev.actorTeam, ev.player) : null;
+  if(["spike_kill","block","serve_ace"].includes(ev.kind)) return {by, how:(plab?`#${plab} `:"")+EV_LABEL[ev.kind]};
+  if(["spike_err","serve_err"].includes(ev.kind)){ const opp=teams[ev.actorTeam].name; return {by, how:`相手のミス（${opp} ${plab?"#"+plab+" ":""}${EV_LABEL[ev.kind]}）`}; }
+  return {by, how:EV_LABEL[ev.kind]||"得点"};
+}
+function renderPointLog(events, teams, rostersArr){
+  if(!events||!events.length) return `<div class="hi-meta" style="margin-top:8px">得点の内訳記録はありません。</div>`;
+  const bySet={}; events.forEach(ev=>{ (bySet[ev.set]=bySet[ev.set]||[]).push(ev); });
+  let html="";
+  Object.keys(bySet).sort((a,b)=>a-b).forEach(sn=>{
+    let a=0,b=0;
+    html+=`<div class="plog-set">第${sn}セット</div>`;
+    bySet[sn].forEach(ev=>{
+      if(ev.team===0) a++; else b++;
+      const d=describeEvent(ev, teams, rostersArr);
+      html+=`<div class="plog-row ${ev.team===0?'l':'r'}">
+        <div class="plog-sc">${a}<span>-</span>${b}</div>
+        <div class="plog-how"><b>${esc(d.by)}</b> ${esc(d.how)}</div></div>`;
+    });
+  });
+  return `<div class="plog">${html}</div>`;
 }
 
 /* ---------- match history ---------- */
@@ -1162,7 +1218,9 @@ function detailHTML(m){
     <div style="font-size:1.35rem;font-weight:800;margin-bottom:4px">セットカウント ${m.teams[0].sets} - ${m.teams[1].sets}</div>
     <div class="hi-meta" style="margin-bottom:16px">${esc(m.teams[0].name)} vs ${esc(m.teams[1].name)}</div>
     <div class="hd-sets">${rows||'<div class="hi-meta">セット記録なし</div>'}</div>
-    ${ts?`<p class="hint" style="margin-top:14px">最多得点：#${esc(ts.num||"")} ${esc(ts.name||"")}（${ts.total}点・${esc(ts.team)}）</p>`:""}</div>`;
+    ${ts?`<p class="hint" style="margin-top:14px">最多得点：#${esc(ts.num||"")} ${esc(ts.name||"")}（${ts.total}点・${esc(ts.team)}）</p>`:""}
+    <div class="sp-label" style="margin-top:16px">得点の経過（1点ずつ）</div>
+    ${renderPointLog(m.events, m.teams, m.rosters)}</div>`;
 }
 function renderHist(){
   const body=document.getElementById("histBody"), title=document.getElementById("histTitle");
@@ -1278,34 +1336,41 @@ function renderMyTeamBox(){
 function mulberry32(a){ return function(){ a|=0; a=(a+0x6d2b79f5)|0; let t=Math.imul(a^(a>>>15),1|a); t=(t+Math.imul(t^(t>>>7),61|t))^t; return ((t^(t>>>14))>>>0)/4294967296; }; }
 function loadDemo(){
   const rnd=mulberry32(20260723), pick=a=>a[Math.floor(rnd()*a.length)];
-  const home=[["1","北野"],["4","佐藤"],["5","石井"],["6","鈴木"],["7","高橋"],["9","田中"],["10","伊藤"],["12","渡辺"],["14","山本"]].map(([num,name])=>({num,name}));
-  const away=[["3","森"],["8","岡田"],["11","内田"],["13","清水"],["18","三浦"],["20","藤田"]].map(([num,name])=>({num,name}));
+  const mk=([num,name])=>({num,name,pid:pidGen()});
+  const home=[["1","北野"],["4","佐藤"],["5","石井"],["6","鈴木"],["7","高橋"],["9","田中"],["10","伊藤"],["12","渡辺"],["14","山本"]].map(mk);
+  const away=[["3","森"],["8","岡田"],["11","内田"],["13","清水"],["18","三浦"],["20","藤田"]].map(mk);
+  const hSp=["4","7","12","10"], aSp=["8","11","18"];
+  // 1セットぶんの得点イベントを、両チーム交互に自然な並びで生成（合計=at,bt）
+  function genSet(setNo, at, bt){
+    const evs=[]; let a=0,b=0;
+    while(a<at||b<bt){
+      const homeTurn=(b>=bt)||(a<at&&rnd()<0.52);
+      if(homeTurn){ a++;
+        if(rnd()<0.62) evs.push({set:setNo,team:0,kind:pick(["spike_kill","spike_kill","spike_kill","block","serve_ace"]),actorTeam:0,player:pick(hSp)});
+        else evs.push({set:setNo,team:0,kind:pick(["spike_err","serve_err","foul"]),actorTeam:1,player:rnd()<0.7?pick(aSp):null});
+      } else { b++;
+        if(rnd()<0.58) evs.push({set:setNo,team:1,kind:pick(["spike_kill","spike_kill","block","serve_ace"]),actorTeam:1,player:pick(aSp)});
+        else evs.push({set:setNo,team:1,kind:pick(["spike_err","serve_err","foul"]),actorTeam:0,player:rnd()<0.7?pick(hSp):null});
+      }
+    }
+    return evs;
+  }
   state=DEFAULT();
   state.teams[0].name="青葉一中"; state.teams[1].name="南川中";
   state.rosters=[home,away];
-  state.completedSets=[{a:25,b:20}]; state.setNumber=2;
+  state.completedSets=[{a:25,b:20}]; state.setNumber=2;   // 第1セット終了 + 第2セット途中(16-13)
+  state.events=[...genSet(1,25,20), ...genSet(2,16,13)];
   state.teams[0].points=16; state.teams[1].points=13; state.serving=0;
-  const hSp=["4","7","12","10"], aSp=["8","11","18"];
-  const ev=(team,kind,actorTeam,player)=>state.events.push({set:1,team,kind,actorTeam,player});
-  for(let i=0;i<14;i++) ev(0,"spike_kill",0,pick(hSp));
-  for(let i=0;i<3;i++) ev(0,"block",0,pick(["5","6","12"]));
-  for(let i=0;i<4;i++) ev(0,"serve_ace",0,pick(["7","10","1"]));
-  for(let i=0;i<6;i++) ev(1,"spike_err",0,pick(hSp));
-  for(let i=0;i<2;i++) ev(1,"serve_err",0,pick(["7","10"]));
-  for(let i=0;i<2;i++) ev(1,"foul",0,null);
-  for(let i=0;i<10;i++) ev(1,"spike_kill",1,pick(aSp));
-  for(let i=0;i<2;i++) ev(1,"block",1,pick(["11","13"]));
-  for(let i=0;i<3;i++) ev(0,"spike_err",1,pick(aSp));
-  // demo serve charting plays (home)
-  const hServ=["7","10","1","4"];
-  for(let i=0;i<18;i++) state.plays.push({id:"pl-ds"+i, set:1, skill:"serve", team:0, player:pick(hServ), from:pick([6,7,8]), to:Math.floor(rnd()*9), result:pick(["ace","eff","ok","ok","ok","miss"])});
-  const hAtk=["4","7","12","10"], atkType=["オープン","Aクイック","Bクイック","バックアタック","オープン"];
-  for(let i=0;i<20;i++) state.plays.push({id:"pl-da"+i, set:1, skill:"spike", team:0, player:pick(hAtk), type:pick(atkType), from:pick([0,1,2]), to:Math.floor(rnd()*9), result:pick(["kill","kill","kill","blocked","miss","covered"])});
-  const de=[]; for(let i=0;i<22;i++) de.push({set:1,team:0,kind:"spike_kill",actorTeam:0,player:i<12?"7":pick(hSp)});
+  // 配球デモ（サーブ/スパイク）
+  const atkType=["オープン","Aクイック","Bクイック","バックアタック","オープン"];
+  for(let i=0;i<18;i++) state.plays.push({id:"pl-ds"+i, set:1, skill:"serve", team:0, player:pick(hSp), from:pick([6,7,8]), to:Math.floor(rnd()*9), result:pick(["ace","eff","ok","ok","ok","miss"])});
+  for(let i=0;i<20;i++) state.plays.push({id:"pl-da"+i, set:1, skill:"spike", team:0, player:pick(hSp), type:pick(atkType), from:pick([0,1,2]), to:Math.floor(rnd()*9), result:pick(["kill","kill","kill","blocked","miss","covered"])});
+  // 履歴のデモ試合（3-1、経過つき）
+  const demoEvents=[...genSet(1,25,20),...genSet(2,23,25),...genSet(3,25,18),...genSet(4,25,22)];
   const demoMatch={ id:"demo-m1", date:"2026-07-20T10:30:00.000Z", bestOf:5,
     teams:[{name:"青葉一中",sets:3},{name:"南川中",sets:1}],
     sets:[{a:25,b:20},{a:23,b:25},{a:25,b:18},{a:25,b:22}], winner:0,
-    rosters:[home,away], events:de };
+    rosters:[home,away], events:demoEvents, plays:[] };
   saveHistory([demoMatch, ...loadHistory().filter(m=>!String(m.id).startsWith("demo-"))]);
   state.savedId=null; history=[]; commit();
 }
@@ -1326,7 +1391,6 @@ document.getElementById("newMatchBtn").addEventListener("click",resetMatch);
 document.querySelectorAll("#actStep1 [data-act]").forEach(b=>b.addEventListener("click",()=>chooseAction(b.dataset.act)));
 document.getElementById("actClose").addEventListener("click",closeActionPanel);
 document.getElementById("actBack").addEventListener("click",()=>{ document.getElementById("actStep2").style.display="none"; document.getElementById("actStep1").style.display=""; });
-document.getElementById("actBack3").addEventListener("click",()=>{ document.getElementById("actStep3").style.display="none"; document.getElementById("actStep2").style.display="none"; document.getElementById("actStep1").style.display=""; ms3From=null; ms3To=null; pend=null; });
 actWrap.addEventListener("click",e=>{ if(e.target===actWrap) closeActionPanel(); });
 
 document.getElementById("rosterBtn").addEventListener("click",openRoster);
