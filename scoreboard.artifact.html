@@ -1,0 +1,489 @@
+<style>
+:root{
+  --ink:#0f1620; --ink-2:#18222f; --line:#2a3747;
+  --text:#eef3f8; --muted:#9fb0c3;
+  --home:#e8863f; --home-d:#b9631f;
+  --away:#2f9e9b; --away-d:#1f726f;
+  --ball:#f4d03f;
+  --danger:#e0524d;
+  --radius:16px;
+}
+*{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+html,body{height:100%; margin:0;}
+body{
+  font-family:-apple-system,BlinkMacSystemFont,"Hiragino Kaku Gothic ProN","Yu Gothic",Meiryo,system-ui,sans-serif;
+  background:var(--ink); color:var(--text);
+  display:flex; flex-direction:column; overflow:hidden;
+  height:100dvh;
+  user-select:none; -webkit-user-select:none;
+}
+button{font-family:inherit; color:inherit; border:none; background:none; cursor:pointer;}
+
+/* ---- top bar ---- */
+.topbar{
+  display:flex; align-items:center; justify-content:space-between;
+  gap:8px; padding:8px 12px; background:var(--ink-2); border-bottom:1px solid var(--line);
+  flex:0 0 auto;
+}
+.topbar .setinfo{display:flex; align-items:baseline; gap:10px; min-width:0;}
+.setinfo .setno{font-size:1.15rem; font-weight:800;}
+.setinfo .fmt{font-size:.78rem; color:var(--muted); white-space:nowrap;}
+.setinfo .deciding{color:var(--ball); font-weight:700; font-size:.78rem;}
+.setscores{font-size:.8rem; color:var(--muted); font-variant-numeric:tabular-nums; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+.topbar .tools{display:flex; gap:6px; flex:0 0 auto;}
+.iconbtn{
+  padding:8px 12px; border-radius:10px; background:#22303f; font-size:.82rem; font-weight:700;
+  display:flex; align-items:center; gap:5px; border:1px solid var(--line);
+}
+.iconbtn:active{transform:scale(.96);}
+
+/* ---- court ---- */
+.court{display:flex; flex:1 1 auto; min-height:0;}
+.side{
+  position:relative; flex:1 1 0; display:flex; flex-direction:column;
+  align-items:center; justify-content:center; overflow:hidden;
+  transition:background .15s;
+}
+.side.home{background:linear-gradient(160deg,var(--home-d),#7c4114);}
+.side.away{background:linear-gradient(160deg,var(--away-d),#134846);}
+.side:active{filter:brightness(1.12);}
+.side .name{
+  position:absolute; top:10px; left:0; right:0; text-align:center;
+  font-size:1.1rem; font-weight:800; padding:0 8px; letter-spacing:.02em;
+  display:flex; align-items:center; justify-content:center; gap:8px;
+}
+.side .name .edit{opacity:.55; font-size:.9rem;}
+.sets-won{
+  position:absolute; top:44px; left:0; right:0; display:flex; justify-content:center; gap:7px;
+}
+.sets-won .dot{width:13px; height:13px; border-radius:50%; background:rgba(255,255,255,.28);}
+.sets-won .dot.on{background:#fff;}
+.score{
+  font-size:min(42vw,34vh); font-weight:800; line-height:.9; font-variant-numeric:tabular-nums;
+  text-shadow:0 4px 18px rgba(0,0,0,.35);
+}
+.serve{
+  position:absolute; bottom:78px; height:34px; display:flex; align-items:center; gap:6px;
+  font-size:.8rem; font-weight:700; opacity:0; transition:opacity .15s;
+}
+.serve.on{opacity:1;}
+.serve .ball{
+  width:26px; height:26px; border-radius:50%;
+  background:radial-gradient(circle at 35% 30%, #fff, var(--ball) 70%);
+  box-shadow:0 0 0 2px rgba(0,0,0,.15), 0 3px 8px rgba(0,0,0,.3); position:relative;
+}
+.serve .ball::before,.serve .ball::after{
+  content:""; position:absolute; inset:3px; border-radius:50%;
+  border:1.5px solid rgba(0,0,0,.35); border-top-color:transparent; border-left-color:transparent;
+}
+.serve .ball::after{transform:rotate(120deg);}
+.tapHint{position:absolute; bottom:46px; font-size:.72rem; color:rgba(255,255,255,.6);}
+
+/* per-side mini controls */
+.minictl{position:absolute; bottom:10px; display:flex; gap:8px; align-items:center;}
+.minibtn{
+  padding:7px 12px; border-radius:999px; background:rgba(0,0,0,.28); font-size:.78rem; font-weight:700;
+  border:1px solid rgba(255,255,255,.18); backdrop-filter:blur(2px);
+}
+.minibtn:active{transform:scale(.94);}
+.minibtn.to span{font-variant-numeric:tabular-nums;}
+
+.divider{width:2px; background:rgba(255,255,255,.14); flex:0 0 auto;}
+
+/* ---- bottom bar ---- */
+.bottombar{
+  display:flex; gap:8px; padding:8px 12px; background:var(--ink-2);
+  border-top:1px solid var(--line); flex:0 0 auto; justify-content:center; align-items:center;
+}
+.bigbtn{
+  padding:11px 20px; border-radius:12px; background:#22303f; font-size:.9rem; font-weight:800;
+  border:1px solid var(--line); display:flex; align-items:center; gap:7px;
+}
+.bigbtn:active{transform:scale(.96);}
+.bigbtn.undo{background:#2b3a4b;}
+.bigbtn:disabled{opacity:.4;}
+
+/* ---- toast / banners ---- */
+.toast{
+  position:fixed; left:50%; top:64px; transform:translateX(-50%);
+  background:#22303f; border:1px solid var(--line); color:var(--text);
+  padding:12px 18px; border-radius:12px; font-weight:700; font-size:.95rem;
+  box-shadow:0 8px 30px rgba(0,0,0,.5); z-index:40; opacity:0; pointer-events:none;
+  transition:opacity .2s, transform .2s; text-align:center;
+}
+.toast.show{opacity:1; transform:translateX(-50%) translateY(0);}
+
+/* ---- match over overlay ---- */
+.overlay{
+  position:fixed; inset:0; background:rgba(8,12,18,.86); z-index:50;
+  display:none; align-items:center; justify-content:center; flex-direction:column; gap:20px; padding:24px;
+  text-align:center; backdrop-filter:blur(3px);
+}
+.overlay.show{display:flex;}
+.overlay .trophy{font-size:3.4rem;}
+.overlay h2{margin:0; font-size:1.8rem;}
+.overlay .final{font-size:1.05rem; color:var(--muted); font-variant-numeric:tabular-nums; line-height:1.7;}
+
+/* ---- settings sheet ---- */
+.sheet-bg{position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:60; display:none;}
+.sheet-bg.show{display:block;}
+.sheet{
+  position:fixed; left:0; right:0; bottom:0; z-index:61; background:var(--ink-2);
+  border-top:1px solid var(--line); border-radius:20px 20px 0 0; padding:18px 18px 26px;
+  transform:translateY(100%); transition:transform .25s; max-width:560px; margin:0 auto;
+}
+.sheet.show{transform:translateY(0);}
+.sheet h3{margin:4px 0 16px; font-size:1.15rem;}
+.field{margin-bottom:16px;}
+.field label{display:block; font-size:.82rem; color:var(--muted); margin-bottom:7px; font-weight:700;}
+.field input[type=text]{
+  width:100%; padding:11px 12px; border-radius:10px; background:var(--ink); color:var(--text);
+  border:1px solid var(--line); font-size:1rem;
+}
+.seg{display:flex; gap:8px;}
+.seg button{
+  flex:1; padding:11px; border-radius:10px; background:var(--ink); border:1px solid var(--line);
+  font-weight:800; font-size:.95rem;
+}
+.seg button.active{background:var(--home); border-color:var(--home); color:#241205;}
+.seg.away button.active{background:var(--away); border-color:var(--away); color:#04211f;}
+.sheet .row{display:flex; gap:10px; margin-top:8px;}
+.sheet .row .bigbtn{flex:1; justify-content:center;}
+.sheet .danger{background:#3a2626; border-color:#5a2f2c; color:#f0b4b0;}
+.hint{font-size:.78rem; color:var(--muted); margin-top:-8px; margin-bottom:16px; line-height:1.5;}
+
+@media (max-width:520px){
+  .side .name{font-size:1rem;}
+  .bigbtn{padding:10px 14px; font-size:.82rem;}
+}
+</style>
+<div class="topbar">
+  <div class="setinfo">
+    <span class="setno" id="setNo">第1セット</span>
+    <span class="fmt" id="fmt"></span>
+    <span class="deciding" id="deciding" style="display:none">最終セット</span>
+  </div>
+  <div class="setscores" id="setScores"></div>
+  <div class="tools">
+    <button class="iconbtn" id="settingsBtn">⚙ 設定</button>
+  </div>
+</div>
+
+<div class="court">
+  <div class="side home" id="sideHome">
+    <div class="name"><span id="nameHome">ホーム</span></div>
+    <div class="sets-won" id="setsHome"></div>
+    <div class="score" id="scoreHome">0</div>
+    <div class="serve" id="serveHome"><span class="ball"></span>サーブ</div>
+    <div class="tapHint">タップで +1</div>
+    <div class="minictl">
+      <button class="minibtn" data-minus="0">−1</button>
+      <button class="minibtn to" data-to="0">T/O <span id="toHome">2</span></button>
+    </div>
+  </div>
+  <div class="divider"></div>
+  <div class="side away" id="sideAway">
+    <div class="name"><span id="nameAway">アウェイ</span></div>
+    <div class="sets-won" id="setsAway"></div>
+    <div class="score" id="scoreAway">0</div>
+    <div class="serve" id="serveAway"><span class="ball"></span>サーブ</div>
+    <div class="tapHint">タップで +1</div>
+    <div class="minictl">
+      <button class="minibtn" data-minus="1">−1</button>
+      <button class="minibtn to" data-to="1">T/O <span id="toAway">2</span></button>
+    </div>
+  </div>
+</div>
+
+<div class="bottombar">
+  <button class="bigbtn undo" id="undoBtn">↶ 取り消し</button>
+  <button class="bigbtn" id="serveToggleBtn">🏐 サーブ切替</button>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<div class="overlay" id="overlay">
+  <div class="trophy">🏆</div>
+  <h2 id="winnerText"></h2>
+  <div class="final" id="finalText"></div>
+  <button class="bigbtn" id="newMatchBtn">新しい試合をはじめる</button>
+</div>
+
+<div class="sheet-bg" id="sheetBg"></div>
+<div class="sheet" id="sheet">
+  <h3>設定</h3>
+  <div class="field">
+    <label>ホーム チーム名</label>
+    <input type="text" id="inpHome" maxlength="16" placeholder="ホーム">
+  </div>
+  <div class="field">
+    <label>アウェイ チーム名</label>
+    <input type="text" id="inpAway" maxlength="16" placeholder="アウェイ">
+  </div>
+  <div class="field">
+    <label>試合形式</label>
+    <div class="seg" id="segFormat">
+      <button data-bo="1">1セットマッチ</button>
+      <button data-bo="3">3セットマッチ</button>
+      <button data-bo="5">5セットマッチ</button>
+    </div>
+  </div>
+  <p class="hint" id="formatHint"></p>
+  <div class="row">
+    <button class="bigbtn danger" id="resetMatchBtn">試合をリセット</button>
+    <button class="bigbtn" id="closeSheetBtn">閉じる</button>
+  </div>
+</div>
+
+<script>
+"use strict";
+const LS_KEY = "vb_scoreboard_v1";
+
+const DEFAULT = () => ({
+  bestOf: 5,
+  pointsPerSet: 25,
+  decidingPoints: 15,
+  winBy: 2,
+  timeoutsPerSet: 2,
+  teams: [
+    {name:"ホーム", sets:0, points:0, timeouts:2},
+    {name:"アウェイ", sets:0, points:0, timeouts:2},
+  ],
+  serving: null,        // 0 | 1 | null
+  setNumber: 1,
+  completedSets: [],    // [{a, b}]
+  matchOver: false,
+  switchedThisSet: false,
+});
+
+let state = load() || DEFAULT();
+let history = [];        // undo stack (snapshots, in-memory)
+
+function load(){
+  try{ const s = JSON.parse(localStorage.getItem(LS_KEY)); return s && s.teams ? s : null; }
+  catch(e){ return null; }
+}
+function persist(){ try{ localStorage.setItem(LS_KEY, JSON.stringify(state)); }catch(e){} }
+function snapshot(){ history.push(JSON.stringify(state)); if(history.length>200) history.shift(); }
+
+function setsToWin(){ return Math.ceil(state.bestOf/2); }
+function isDecidingSet(){
+  const need = setsToWin();
+  return state.teams[0].sets === need-1 && state.teams[1].sets === need-1 && state.bestOf>1;
+}
+function targetPoints(){ return isDecidingSet() ? state.decidingPoints : state.pointsPerSet; }
+
+/* ---------- scoring ---------- */
+function addPoint(t){
+  if(state.matchOver) return;
+  snapshot();
+  const team = state.teams[t];
+  team.points++;
+  state.serving = t;
+  checkCourtSwitch();
+  const tgt = targetPoints();
+  const opp = state.teams[1-t].points;
+  if(team.points >= tgt && team.points - opp >= state.winBy){
+    completeSet(t);
+  }
+  commit();
+}
+
+function minusPoint(t){
+  const team = state.teams[t];
+  if(team.points<=0) return;
+  snapshot();
+  team.points--;
+  commit();
+}
+
+function completeSet(winner){
+  state.completedSets.push({a:state.teams[0].points, b:state.teams[1].points});
+  state.teams[winner].sets++;
+  const w = state.teams[winner];
+  if(w.sets >= setsToWin()){
+    state.matchOver = true;
+    commit();
+    return;
+  }
+  // next set
+  state.teams[0].points = 0; state.teams[1].points = 0;
+  state.teams[0].timeouts = state.timeoutsPerSet;
+  state.teams[1].timeouts = state.timeoutsPerSet;
+  state.setNumber++;
+  state.serving = null;
+  state.switchedThisSet = false;
+  const dec = isDecidingSet();
+  setTimeout(()=> toast(`第${state.setNumber-1}セット終了 → 第${state.setNumber}セットへ`
+      + (dec ? " (最終セット・15点先取・8点でコートチェンジ)" : "")), 30);
+}
+
+function checkCourtSwitch(){
+  if(!isDecidingSet() || state.switchedThisSet) return;
+  if(state.teams[0].points>=8 || state.teams[1].points>=8){
+    state.switchedThisSet = true;
+    setTimeout(()=> toast("★ コートチェンジ (最終セット8点)"), 30);
+  }
+}
+
+function timeout(t){
+  const team = state.teams[t];
+  if(team.timeouts<=0){ toast(`${team.name} はこのセットのタイムアウトを使い切りました`); return; }
+  snapshot();
+  team.timeouts--;
+  commit();
+  toast(`${team.name} タイムアウト (残り${team.timeouts})`);
+}
+
+function toggleServe(){
+  snapshot();
+  state.serving = state.serving===null ? 0 : (state.serving===0 ? 1 : (state.serving===1 ? null : 0));
+  commit();
+}
+
+function undo(){
+  if(!history.length){ toast("これ以上戻せません"); return; }
+  state = JSON.parse(history.pop());
+  render(); persist();
+}
+
+function resetMatch(){
+  const cfg = { bestOf: state.bestOf,
+    names:[state.teams[0].name, state.teams[1].name] };
+  state = DEFAULT();
+  state.bestOf = cfg.bestOf;
+  state.teams[0].name = cfg.names[0];
+  state.teams[1].name = cfg.names[1];
+  history = [];
+  commit();
+}
+
+function commit(){ render(); persist(); }
+
+/* ---------- render ---------- */
+function render(){
+  const [h,a] = state.teams;
+  document.getElementById("nameHome").textContent = h.name;
+  document.getElementById("nameAway").textContent = a.name;
+  document.getElementById("scoreHome").textContent = h.points;
+  document.getElementById("scoreAway").textContent = a.points;
+  document.getElementById("toHome").textContent = h.timeouts;
+  document.getElementById("toAway").textContent = a.timeouts;
+
+  document.getElementById("setNo").textContent = `第${state.setNumber}セット`;
+  const dec = isDecidingSet();
+  document.getElementById("deciding").style.display = dec ? "" : "none";
+  const fmtLabel = state.bestOf===1 ? "1セットマッチ" : `${state.bestOf}セットマッチ`;
+  document.getElementById("fmt").textContent = `${fmtLabel} / ${targetPoints()}点先取`;
+
+  // sets-won dots
+  renderDots("setsHome", h.sets);
+  renderDots("setsAway", a.sets);
+
+  // completed sets line
+  const line = state.completedSets.map((s,i)=>`(${i+1}) ${s.a}-${s.b}`).join("  ");
+  document.getElementById("setScores").textContent = line;
+
+  // serve
+  document.getElementById("serveHome").classList.toggle("on", state.serving===0);
+  document.getElementById("serveAway").classList.toggle("on", state.serving===1);
+
+  document.getElementById("undoBtn").disabled = history.length===0;
+
+  // match over
+  const ov = document.getElementById("overlay");
+  if(state.matchOver){
+    const winner = h.sets>a.sets ? h : a;
+    document.getElementById("winnerText").textContent = `${winner.name} の勝ち！`;
+    const games = state.completedSets.map(s=>`${s.a} - ${s.b}`).join("<br>");
+    document.getElementById("finalText").innerHTML =
+      `セットカウント ${h.sets} - ${a.sets}<br><br>${games}`;
+    ov.classList.add("show");
+  } else {
+    ov.classList.remove("show");
+  }
+}
+function renderDots(id, n){
+  const total = setsToWin();
+  const el = document.getElementById(id);
+  el.innerHTML = "";
+  for(let i=0;i<total;i++){
+    const d = document.createElement("div");
+    d.className = "dot" + (i<n ? " on" : "");
+    el.appendChild(d);
+  }
+}
+
+/* ---------- toast ---------- */
+let toastTimer;
+function toast(msg){
+  const t = document.getElementById("toast");
+  t.textContent = msg; t.classList.add("show");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(()=> t.classList.remove("show"), 2600);
+}
+
+/* ---------- events ---------- */
+document.getElementById("sideHome").addEventListener("click", e=>{
+  if(e.target.closest(".minictl")) return; addPoint(0);
+});
+document.getElementById("sideAway").addEventListener("click", e=>{
+  if(e.target.closest(".minictl")) return; addPoint(1);
+});
+document.querySelectorAll("[data-minus]").forEach(b=>
+  b.addEventListener("click", e=>{ e.stopPropagation(); minusPoint(+b.dataset.minus); }));
+document.querySelectorAll("[data-to]").forEach(b=>
+  b.addEventListener("click", e=>{ e.stopPropagation(); timeout(+b.dataset.to); }));
+document.getElementById("undoBtn").addEventListener("click", undo);
+document.getElementById("serveToggleBtn").addEventListener("click", toggleServe);
+document.getElementById("newMatchBtn").addEventListener("click", resetMatch);
+
+/* settings sheet */
+const sheet = document.getElementById("sheet"), sheetBg = document.getElementById("sheetBg");
+function openSheet(){
+  document.getElementById("inpHome").value = state.teams[0].name;
+  document.getElementById("inpAway").value = state.teams[1].name;
+  document.querySelectorAll("#segFormat button").forEach(b=>
+    b.classList.toggle("active", +b.dataset.bo===state.bestOf));
+  updateFormatHint();
+  sheet.classList.add("show"); sheetBg.classList.add("show");
+}
+function closeSheet(){
+  const hn = document.getElementById("inpHome").value.trim() || "ホーム";
+  const an = document.getElementById("inpAway").value.trim() || "アウェイ";
+  if(hn!==state.teams[0].name || an!==state.teams[1].name){
+    state.teams[0].name = hn; state.teams[1].name = an; commit();
+  }
+  sheet.classList.remove("show"); sheetBg.classList.remove("show");
+}
+function updateFormatHint(){
+  const bo = state.bestOf;
+  const need = Math.ceil(bo/2);
+  document.getElementById("formatHint").textContent =
+    bo===1 ? "1セットのみ・25点先取（2点差）。"
+    : `先に${need}セット先取で勝ち。最終セットは15点先取（8点でコートチェンジ）。それ以外は25点先取、いずれも2点差がつくまで継続（デュース）。`;
+}
+document.getElementById("settingsBtn").addEventListener("click", openSheet);
+document.getElementById("closeSheetBtn").addEventListener("click", closeSheet);
+sheetBg.addEventListener("click", closeSheet);
+document.getElementById("resetMatchBtn").addEventListener("click", ()=>{
+  if(confirm("現在の試合を最初からやり直します。よろしいですか？")){ resetMatch(); closeSheet(); }
+});
+document.querySelectorAll("#segFormat button").forEach(b=>
+  b.addEventListener("click", ()=>{
+    const newBo = +b.dataset.bo;
+    if(state.completedSets.length>0 || state.teams[0].points>0 || state.teams[1].points>0){
+      if(!confirm("試合形式を変えると現在の試合をリセットします。よろしいですか？")) return;
+    }
+    state.bestOf = newBo;
+    resetMatch();
+    document.querySelectorAll("#segFormat button").forEach(x=>
+      x.classList.toggle("active", x===b));
+    updateFormatHint();
+  }));
+
+// prevent accidental double-tap zoom
+document.addEventListener("dblclick", e=> e.preventDefault(), {passive:false});
+
+render();
+</script>
