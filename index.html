@@ -9,40 +9,38 @@
 <title>バレー スコアボード</title>
 <style>
 :root{
-  --ink:#0f1620; --ink-2:#18222f; --line:#2a3747;
+  --ink:#0f1620; --ink-2:#18222f; --ink-3:#22303f; --line:#2a3747;
   --text:#eef3f8; --muted:#9fb0c3;
   --home:#e8863f; --home-d:#b9631f;
   --away:#2f9e9b; --away-d:#1f726f;
   --ball:#f4d03f;
   --danger:#e0524d;
-  --radius:16px;
 }
 *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
 html,body{height:100%; margin:0;}
 body{
   font-family:-apple-system,BlinkMacSystemFont,"Hiragino Kaku Gothic ProN","Yu Gothic",Meiryo,system-ui,sans-serif;
   background:var(--ink); color:var(--text);
-  display:flex; flex-direction:column; overflow:hidden;
-  height:100dvh;
+  display:flex; flex-direction:column; overflow:hidden; height:100dvh;
   user-select:none; -webkit-user-select:none;
 }
 button{font-family:inherit; color:inherit; border:none; background:none; cursor:pointer;}
+input{font-family:inherit;}
 
 /* ---- top bar ---- */
 .topbar{
-  display:flex; align-items:center; justify-content:space-between;
-  gap:8px; padding:8px 12px; background:var(--ink-2); border-bottom:1px solid var(--line);
-  flex:0 0 auto;
+  display:flex; align-items:center; justify-content:space-between; gap:8px;
+  padding:8px 12px; background:var(--ink-2); border-bottom:1px solid var(--line); flex:0 0 auto;
 }
-.topbar .setinfo{display:flex; align-items:baseline; gap:10px; min-width:0;}
-.setinfo .setno{font-size:1.15rem; font-weight:800;}
-.setinfo .fmt{font-size:.78rem; color:var(--muted); white-space:nowrap;}
-.setinfo .deciding{color:var(--ball); font-weight:700; font-size:.78rem;}
-.setscores{font-size:.8rem; color:var(--muted); font-variant-numeric:tabular-nums; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
-.topbar .tools{display:flex; gap:6px; flex:0 0 auto;}
+.setinfo{display:flex; align-items:baseline; gap:10px; min-width:0;}
+.setinfo .setno{font-size:1.1rem; font-weight:800; white-space:nowrap;}
+.setinfo .fmt{font-size:.74rem; color:var(--muted); white-space:nowrap;}
+.setinfo .deciding{color:var(--ball); font-weight:700; font-size:.74rem;}
+.setscores{font-size:.78rem; color:var(--muted); font-variant-numeric:tabular-nums; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; flex:1; text-align:center;}
+.tools{display:flex; gap:6px; flex:0 0 auto;}
 .iconbtn{
-  padding:8px 12px; border-radius:10px; background:#22303f; font-size:.82rem; font-weight:700;
-  display:flex; align-items:center; gap:5px; border:1px solid var(--line);
+  padding:8px 11px; border-radius:10px; background:var(--ink-3); font-size:.8rem; font-weight:700;
+  display:flex; align-items:center; gap:5px; border:1px solid var(--line); white-space:nowrap;
 }
 .iconbtn:active{transform:scale(.96);}
 
@@ -50,34 +48,29 @@ button{font-family:inherit; color:inherit; border:none; background:none; cursor:
 .court{display:flex; flex:1 1 auto; min-height:0;}
 .side{
   position:relative; flex:1 1 0; display:flex; flex-direction:column;
-  align-items:center; justify-content:center; overflow:hidden;
-  transition:background .15s;
+  align-items:center; justify-content:center; overflow:hidden; transition:filter .12s;
 }
 .side.home{background:linear-gradient(160deg,var(--home-d),#7c4114);}
 .side.away{background:linear-gradient(160deg,var(--away-d),#134846);}
 .side:active{filter:brightness(1.12);}
 .side .name{
   position:absolute; top:10px; left:0; right:0; text-align:center;
-  font-size:1.1rem; font-weight:800; padding:0 8px; letter-spacing:.02em;
-  display:flex; align-items:center; justify-content:center; gap:8px;
+  font-size:1.05rem; font-weight:800; padding:0 8px; letter-spacing:.02em;
 }
-.side .name .edit{opacity:.55; font-size:.9rem;}
-.sets-won{
-  position:absolute; top:44px; left:0; right:0; display:flex; justify-content:center; gap:7px;
-}
-.sets-won .dot{width:13px; height:13px; border-radius:50%; background:rgba(255,255,255,.28);}
+.sets-won{position:absolute; top:42px; left:0; right:0; display:flex; justify-content:center; gap:7px;}
+.sets-won .dot{width:12px; height:12px; border-radius:50%; background:rgba(255,255,255,.28);}
 .sets-won .dot.on{background:#fff;}
 .score{
-  font-size:min(42vw,34vh); font-weight:800; line-height:.9; font-variant-numeric:tabular-nums;
+  font-size:min(40vw,32vh); font-weight:800; line-height:.9; font-variant-numeric:tabular-nums;
   text-shadow:0 4px 18px rgba(0,0,0,.35);
 }
 .serve{
-  position:absolute; bottom:78px; height:34px; display:flex; align-items:center; gap:6px;
-  font-size:.8rem; font-weight:700; opacity:0; transition:opacity .15s;
+  position:absolute; bottom:82px; height:32px; display:flex; align-items:center; gap:6px;
+  font-size:.78rem; font-weight:700; opacity:0; transition:opacity .15s;
 }
 .serve.on{opacity:1;}
 .serve .ball{
-  width:26px; height:26px; border-radius:50%;
+  width:24px; height:24px; border-radius:50%;
   background:radial-gradient(circle at 35% 30%, #fff, var(--ball) 70%);
   box-shadow:0 0 0 2px rgba(0,0,0,.15), 0 3px 8px rgba(0,0,0,.3); position:relative;
 }
@@ -86,17 +79,14 @@ button{font-family:inherit; color:inherit; border:none; background:none; cursor:
   border:1.5px solid rgba(0,0,0,.35); border-top-color:transparent; border-left-color:transparent;
 }
 .serve .ball::after{transform:rotate(120deg);}
-.tapHint{position:absolute; bottom:46px; font-size:.72rem; color:rgba(255,255,255,.6);}
-
-/* per-side mini controls */
+.tapHint{position:absolute; bottom:50px; font-size:.72rem; color:rgba(255,255,255,.6);}
 .minictl{position:absolute; bottom:10px; display:flex; gap:8px; align-items:center;}
 .minibtn{
   padding:7px 12px; border-radius:999px; background:rgba(0,0,0,.28); font-size:.78rem; font-weight:700;
-  border:1px solid rgba(255,255,255,.18); backdrop-filter:blur(2px);
+  border:1px solid rgba(255,255,255,.18);
 }
 .minibtn:active{transform:scale(.94);}
 .minibtn.to span{font-variant-numeric:tabular-nums;}
-
 .divider{width:2px; background:rgba(255,255,255,.14); flex:0 0 auto;}
 
 /* ---- bottom bar ---- */
@@ -105,44 +95,84 @@ button{font-family:inherit; color:inherit; border:none; background:none; cursor:
   border-top:1px solid var(--line); flex:0 0 auto; justify-content:center; align-items:center;
 }
 .bigbtn{
-  padding:11px 20px; border-radius:12px; background:#22303f; font-size:.9rem; font-weight:800;
+  padding:11px 20px; border-radius:12px; background:var(--ink-3); font-size:.9rem; font-weight:800;
   border:1px solid var(--line); display:flex; align-items:center; gap:7px;
 }
 .bigbtn:active{transform:scale(.96);}
 .bigbtn.undo{background:#2b3a4b;}
 .bigbtn:disabled{opacity:.4;}
 
-/* ---- toast / banners ---- */
+/* ---- toast ---- */
 .toast{
   position:fixed; left:50%; top:64px; transform:translateX(-50%);
-  background:#22303f; border:1px solid var(--line); color:var(--text);
-  padding:12px 18px; border-radius:12px; font-weight:700; font-size:.95rem;
-  box-shadow:0 8px 30px rgba(0,0,0,.5); z-index:40; opacity:0; pointer-events:none;
-  transition:opacity .2s, transform .2s; text-align:center;
+  background:var(--ink-3); border:1px solid var(--line); color:var(--text);
+  padding:12px 18px; border-radius:12px; font-weight:700; font-size:.92rem;
+  box-shadow:0 8px 30px rgba(0,0,0,.5); z-index:80; opacity:0; pointer-events:none;
+  transition:opacity .2s; text-align:center; max-width:88vw;
 }
-.toast.show{opacity:1; transform:translateX(-50%) translateY(0);}
+.toast.show{opacity:1;}
 
 /* ---- match over overlay ---- */
 .overlay{
-  position:fixed; inset:0; background:rgba(8,12,18,.86); z-index:50;
-  display:none; align-items:center; justify-content:center; flex-direction:column; gap:20px; padding:24px;
-  text-align:center; backdrop-filter:blur(3px);
+  position:fixed; inset:0; background:rgba(8,12,18,.9); z-index:70;
+  display:none; align-items:center; justify-content:center; flex-direction:column; gap:20px;
+  padding:24px; text-align:center; backdrop-filter:blur(3px);
 }
 .overlay.show{display:flex;}
 .overlay .trophy{font-size:3.4rem;}
-.overlay h2{margin:0; font-size:1.8rem;}
-.overlay .final{font-size:1.05rem; color:var(--muted); font-variant-numeric:tabular-nums; line-height:1.7;}
+.overlay h2{margin:0; font-size:1.7rem;}
+.overlay .final{font-size:1.02rem; color:var(--muted); font-variant-numeric:tabular-nums; line-height:1.7;}
 
-/* ---- settings sheet ---- */
+/* ---- action panel (single-screen point entry) ---- */
+.actwrap{
+  position:fixed; inset:0; z-index:75; display:none; flex-direction:column;
+  justify-content:flex-end; background:rgba(6,10,16,.55); backdrop-filter:blur(2px);
+}
+.actwrap.show{display:flex;}
+.actsheet{
+  background:var(--ink-2); border-top:3px solid var(--acc,#888); border-radius:22px 22px 0 0;
+  padding:16px 16px 24px; max-width:640px; width:100%; margin:0 auto;
+  transform:translateY(12px); transition:transform .18s;
+}
+.actwrap.show .actsheet{transform:translateY(0);}
+.acthead{display:flex; align-items:center; justify-content:space-between; margin-bottom:14px;}
+.acthead .who{font-size:1.1rem; font-weight:800; display:flex; align-items:center; gap:8px;}
+.acthead .who .chip{width:14px; height:14px; border-radius:50%; background:var(--acc,#888);}
+.acthead .close{font-size:1.6rem; color:var(--muted); padding:2px 10px; line-height:1;}
+.actgrid{display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-bottom:10px;}
+.actbtn{
+  padding:16px 8px; border-radius:14px; background:var(--ink-3); border:1px solid var(--line);
+  font-size:1rem; font-weight:800; display:flex; flex-direction:column; align-items:center; gap:6px;
+}
+.actbtn .emo{font-size:1.5rem;}
+.actbtn:active{transform:scale(.96);}
+.actrow2{display:grid; grid-template-columns:1fr 1fr; gap:10px;}
+.actbtn.ghost{background:transparent; border-style:dashed; color:var(--muted); font-size:.92rem; padding:13px;}
+.actstep2 .backrow{display:flex; align-items:center; gap:10px; margin-bottom:12px;}
+.actstep2 .backrow button{color:var(--muted); font-weight:700; font-size:.9rem;}
+.actstep2 .lead{font-size:.95rem; color:var(--muted); margin-bottom:12px;}
+.playergrid{display:grid; grid-template-columns:repeat(auto-fill,minmax(70px,1fr)); gap:10px; max-height:46vh; overflow-y:auto;}
+.pbtn{
+  padding:12px 6px; border-radius:12px; background:var(--ink-3); border:1px solid var(--line);
+  display:flex; flex-direction:column; align-items:center; gap:3px;
+}
+.pbtn:active{transform:scale(.95);}
+.pbtn .num{font-size:1.4rem; font-weight:800; font-variant-numeric:tabular-nums;}
+.pbtn .pn{font-size:.72rem; color:var(--muted); max-width:64px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+.pbtn.unknown{border-style:dashed; color:var(--muted);}
+.pbtn.unknown .num{font-size:1rem;}
+
+/* ---- bottom sheets (settings / roster / stats / history) ---- */
 .sheet-bg{position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:60; display:none;}
 .sheet-bg.show{display:block;}
 .sheet{
   position:fixed; left:0; right:0; bottom:0; z-index:61; background:var(--ink-2);
   border-top:1px solid var(--line); border-radius:20px 20px 0 0; padding:18px 18px 26px;
-  transform:translateY(100%); transition:transform .25s; max-width:560px; margin:0 auto;
+  transform:translateY(100%); transition:transform .25s; max-width:620px; margin:0 auto;
+  max-height:90vh; overflow-y:auto;
 }
 .sheet.show{transform:translateY(0);}
-.sheet h3{margin:4px 0 16px; font-size:1.15rem;}
+.sheet h3{margin:2px 0 16px; font-size:1.15rem;}
 .field{margin-bottom:16px;}
 .field label{display:block; font-size:.82rem; color:var(--muted); margin-bottom:7px; font-weight:700;}
 .field input[type=text]{
@@ -150,58 +180,64 @@ button{font-family:inherit; color:inherit; border:none; background:none; cursor:
   border:1px solid var(--line); font-size:1rem;
 }
 .seg{display:flex; gap:8px;}
-.seg button{
-  flex:1; padding:11px; border-radius:10px; background:var(--ink); border:1px solid var(--line);
-  font-weight:800; font-size:.95rem;
-}
+.seg button{flex:1; padding:11px; border-radius:10px; background:var(--ink); border:1px solid var(--line); font-weight:800; font-size:.92rem;}
 .seg button.active{background:var(--home); border-color:var(--home); color:#241205;}
-.seg.away button.active{background:var(--away); border-color:var(--away); color:#04211f;}
-.sheet .row{display:flex; gap:10px; margin-top:8px;}
-.sheet .row .bigbtn{flex:1; justify-content:center;}
-.sheet .danger{background:#3a2626; border-color:#5a2f2c; color:#f0b4b0;}
-.hint{font-size:.78rem; color:var(--muted); margin-top:-8px; margin-bottom:16px; line-height:1.5;}
+.row{display:flex; gap:10px; margin-top:8px;}
+.row .bigbtn{flex:1; justify-content:center;}
+.danger{background:#3a2626; border-color:#5a2f2c; color:#f0b4b0;}
+.hint{font-size:.78rem; color:var(--muted); margin:-6px 0 16px; line-height:1.5;}
 
-/* ---- history ---- */
-.hist-list{max-height:60vh; overflow-y:auto; display:flex; flex-direction:column; gap:8px; margin-bottom:12px;}
+/* tabs (roster/stats) */
+.tabs{display:flex; gap:8px; margin-bottom:14px;}
+.tabs button{flex:1; padding:10px; border-radius:10px; background:var(--ink); border:1px solid var(--line); font-weight:800;}
+.tabs button.active.home{background:var(--home); border-color:var(--home); color:#241205;}
+.tabs button.active.away{background:var(--away); border-color:var(--away); color:#04211f;}
+
+/* roster editor */
+.rlist{display:flex; flex-direction:column; gap:8px; margin-bottom:12px;}
+.rrow{display:flex; gap:8px; align-items:center;}
+.rrow input.num{width:64px; text-align:center; padding:10px; border-radius:9px; background:var(--ink); border:1px solid var(--line); color:var(--text); font-size:1rem; font-weight:700;}
+.rrow input.nm{flex:1; padding:10px; border-radius:9px; background:var(--ink); border:1px solid var(--line); color:var(--text); font-size:1rem;}
+.rrow .del{color:var(--muted); font-size:1.2rem; padding:6px 8px;}
+.addrow{width:100%; padding:11px; border-radius:10px; border:1px dashed var(--line); color:var(--muted); font-weight:700; background:transparent;}
+
+/* stats table */
+.stat-total{display:flex; justify-content:space-between; align-items:baseline; margin-bottom:12px; padding:0 2px;}
+.stat-total .big{font-size:1.6rem; font-weight:800; font-variant-numeric:tabular-nums;}
+.stat-total .lbl{font-size:.8rem; color:var(--muted);}
+.stbl{width:100%; border-collapse:collapse; font-variant-numeric:tabular-nums;}
+.stbl th,.stbl td{padding:9px 8px; text-align:right; font-size:.9rem; border-bottom:1px solid var(--line);}
+.stbl th{color:var(--muted); font-weight:700; font-size:.76rem; position:sticky; top:0; background:var(--ink-2);}
+.stbl th:first-child,.stbl td:first-child{text-align:left;}
+.stbl td.pl{display:flex; align-items:baseline; gap:8px;}
+.stbl td .no{font-weight:800; min-width:26px; display:inline-block;}
+.stbl td .total{font-weight:800; color:var(--ball);}
+.stbl tr.top td{background:rgba(244,208,63,.06);}
+.stat-empty{color:var(--muted); text-align:center; padding:26px 0; font-size:.9rem; line-height:1.6;}
+
+/* history */
+.hist-list{display:flex; flex-direction:column; gap:8px; margin-bottom:12px;}
 .hist-empty{color:var(--muted); text-align:center; padding:30px 0; font-size:.9rem;}
-.hist-item{
-  display:flex; align-items:center; gap:10px; padding:12px 14px; border-radius:12px;
-  background:var(--ink); border:1px solid var(--line); text-align:left; width:100%;
-}
+.hist-item{display:flex; align-items:center; gap:10px; padding:12px 14px; border-radius:12px; background:var(--ink); border:1px solid var(--line); text-align:left; width:100%;}
 .hist-item:active{transform:scale(.99);}
-.hist-item .hi-main{flex:1; min-width:0;}
-.hist-item .hi-teams{font-weight:800; font-size:.98rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
-.hist-item .hi-teams .win{color:var(--ball);}
-.hist-item .hi-meta{font-size:.76rem; color:var(--muted); margin-top:3px; font-variant-numeric:tabular-nums;}
-.hist-item .hi-count{font-size:1.5rem; font-weight:800; font-variant-numeric:tabular-nums; flex:0 0 auto;}
-.hist-item .hi-del{flex:0 0 auto; color:var(--muted); font-size:1.1rem; padding:6px 8px;}
+.hi-main{flex:1; min-width:0;}
+.hi-teams{font-weight:800; font-size:.96rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+.hi-teams .win{color:var(--ball);}
+.hi-meta{font-size:.76rem; color:var(--muted); margin-top:3px; font-variant-numeric:tabular-nums;}
+.hi-count{font-size:1.45rem; font-weight:800; font-variant-numeric:tabular-nums; flex:0 0 auto;}
+.hi-del{flex:0 0 auto; color:var(--muted); font-size:1.1rem; padding:6px 8px;}
 .hist-detail{margin:6px 0 14px;}
-.hist-detail .hd-sets{display:flex; flex-direction:column; gap:6px; font-variant-numeric:tabular-nums;}
-.hist-detail .hd-sets .r{display:flex; justify-content:space-between; padding:8px 12px; background:var(--ink); border-radius:9px; border:1px solid var(--line);}
+.hd-sets{display:flex; flex-direction:column; gap:6px; font-variant-numeric:tabular-nums;}
+.hd-sets .r{display:flex; justify-content:space-between; padding:8px 12px; background:var(--ink); border-radius:9px; border:1px solid var(--line);}
 
-/* ---- share card (offscreen render target) ---- */
-#shareCard{
-  position:fixed; left:-9999px; top:0; width:720px; padding:48px 52px;
-  background:linear-gradient(150deg,#12202e,#0c1620); color:#eef3f8; box-sizing:border-box;
-  font-family:-apple-system,BlinkMacSystemFont,"Hiragino Kaku Gothic ProN","Yu Gothic",Meiryo,sans-serif;
-}
-#shareCard .sc-h{font-size:22px; color:#9fb0c3; letter-spacing:.04em;}
-#shareCard .sc-date{font-size:20px; color:#9fb0c3; margin-top:4px;}
-#shareCard .sc-teams{display:flex; align-items:center; justify-content:space-between; margin:34px 0 10px; gap:16px;}
-#shareCard .sc-team{flex:1; text-align:center;}
-#shareCard .sc-team .nm{font-size:34px; font-weight:800; word-break:break-word;}
-#shareCard .sc-team .st{font-size:88px; font-weight:800; line-height:1; margin-top:10px; font-variant-numeric:tabular-nums;}
-#shareCard .sc-team.win .nm{color:#f4d03f;}
-#shareCard .sc-vs{font-size:30px; color:#6b7d92; font-weight:800;}
-#shareCard .sc-fmt{text-align:center; color:#9fb0c3; font-size:22px; margin-bottom:26px;}
-#shareCard .sc-sets{display:flex; flex-direction:column; gap:10px;}
-#shareCard .sc-set{display:flex; justify-content:space-between; font-size:26px; padding:12px 20px; background:rgba(255,255,255,.05); border-radius:12px; font-variant-numeric:tabular-nums;}
-#shareCard .sc-set .lbl{color:#9fb0c3;}
-#shareCard .sc-foot{margin-top:30px; text-align:right; color:#5b6c80; font-size:18px;}
+/* offscreen share render */
+#shareCard{position:fixed; left:-9999px; top:0; width:720px;}
 
-@media (max-width:520px){
-  .side .name{font-size:1rem;}
+@media (max-width:540px){
+  .iconbtn{padding:8px 9px; font-size:0;}
+  .iconbtn .ic{font-size:1.05rem;}
   .bigbtn{padding:10px 14px; font-size:.82rem;}
+  .actgrid{grid-template-columns:repeat(3,1fr);}
 }
 </style>
 </head>
@@ -210,22 +246,24 @@ button{font-family:inherit; color:inherit; border:none; background:none; cursor:
   <div class="setinfo">
     <span class="setno" id="setNo">第1セット</span>
     <span class="fmt" id="fmt"></span>
-    <span class="deciding" id="deciding" style="display:none">最終セット</span>
+    <span class="deciding" id="deciding" style="display:none">最終</span>
   </div>
   <div class="setscores" id="setScores"></div>
   <div class="tools">
-    <button class="iconbtn" id="historyBtn">📋 履歴</button>
-    <button class="iconbtn" id="settingsBtn">⚙ 設定</button>
+    <button class="iconbtn" id="rosterBtn"><span class="ic">👥</span><span>選手</span></button>
+    <button class="iconbtn" id="statsBtn"><span class="ic">📊</span><span>スタッツ</span></button>
+    <button class="iconbtn" id="historyBtn"><span class="ic">📋</span><span>履歴</span></button>
+    <button class="iconbtn" id="settingsBtn"><span class="ic">⚙</span><span>設定</span></button>
   </div>
 </div>
 
 <div class="court">
   <div class="side home" id="sideHome">
-    <div class="name"><span id="nameHome">ホーム</span></div>
+    <div class="name" id="nameHome">ホーム</div>
     <div class="sets-won" id="setsHome"></div>
     <div class="score" id="scoreHome">0</div>
     <div class="serve" id="serveHome"><span class="ball"></span>サーブ</div>
-    <div class="tapHint">タップで +1</div>
+    <div class="tapHint" id="hintHome">タップで +1</div>
     <div class="minictl">
       <button class="minibtn" data-minus="0">−1</button>
       <button class="minibtn to" data-to="0">T/O <span id="toHome">2</span></button>
@@ -233,11 +271,11 @@ button{font-family:inherit; color:inherit; border:none; background:none; cursor:
   </div>
   <div class="divider"></div>
   <div class="side away" id="sideAway">
-    <div class="name"><span id="nameAway">アウェイ</span></div>
+    <div class="name" id="nameAway">アウェイ</div>
     <div class="sets-won" id="setsAway"></div>
     <div class="score" id="scoreAway">0</div>
     <div class="serve" id="serveAway"><span class="ball"></span>サーブ</div>
-    <div class="tapHint">タップで +1</div>
+    <div class="tapHint" id="hintAway">タップで +1</div>
     <div class="minictl">
       <button class="minibtn" data-minus="1">−1</button>
       <button class="minibtn to" data-to="1">T/O <span id="toAway">2</span></button>
@@ -250,18 +288,71 @@ button{font-family:inherit; color:inherit; border:none; background:none; cursor:
   <button class="bigbtn" id="serveToggleBtn">🏐 サーブ切替</button>
 </div>
 
+<!-- point-entry action panel -->
+<div class="actwrap" id="actWrap">
+  <div class="actsheet" id="actSheet">
+    <div class="acthead">
+      <div class="who"><span class="chip"></span><span id="actTeamName">チーム</span> 得点</div>
+      <button class="close" id="actClose">×</button>
+    </div>
+    <div id="actStep1">
+      <div class="actgrid">
+        <button class="actbtn" data-act="spike"><span class="emo">⚡</span>スパイク</button>
+        <button class="actbtn" data-act="block"><span class="emo">🧱</span>ブロック</button>
+        <button class="actbtn" data-act="ace"><span class="emo">🎯</span>サーブ</button>
+      </div>
+      <div class="actrow2">
+        <button class="actbtn ghost" data-act="opp_error">相手のミスで得点</button>
+        <button class="actbtn ghost" data-act="point">得点のみ（記録なし）</button>
+      </div>
+    </div>
+    <div id="actStep2" class="actstep2" style="display:none">
+      <div class="backrow"><button id="actBack">← もどる</button><span id="actKindLabel"></span></div>
+      <div class="lead">だれの得点？</div>
+      <div class="playergrid" id="playerGrid"></div>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <div class="overlay" id="overlay">
   <div class="trophy">🏆</div>
   <h2 id="winnerText"></h2>
   <div class="final" id="finalText"></div>
-  <div class="row" style="display:flex; gap:10px; flex-wrap:wrap; justify-content:center;">
+  <div class="row" style="flex-wrap:wrap; justify-content:center;">
     <button class="bigbtn" id="shareResultBtn">📷 結果を画像で共有</button>
     <button class="bigbtn" id="newMatchBtn">新しい試合をはじめる</button>
   </div>
 </div>
 
+<!-- roster sheet -->
+<div class="sheet-bg" id="rosterBg"></div>
+<div class="sheet" id="rosterSheet">
+  <h3>選手登録</h3>
+  <p class="hint">背番号と名前を登録すると、得点入力のときに「だれの得点か」を選べるようになり、スタッツが自動で集計されます。（登録しなければタップで即得点のままです）</p>
+  <div class="tabs" id="rosterTabs">
+    <button data-team="0" class="active home">ホーム</button>
+    <button data-team="1" class="away">アウェイ</button>
+  </div>
+  <div class="rlist" id="rosterList"></div>
+  <button class="addrow" id="addPlayerBtn">＋ 選手を追加</button>
+  <div class="row"><button class="bigbtn" id="closeRosterBtn">保存して閉じる</button></div>
+</div>
+
+<!-- stats sheet -->
+<div class="sheet-bg" id="statsBg"></div>
+<div class="sheet" id="statsSheet">
+  <h3>スタッツ（この試合）</h3>
+  <div class="tabs" id="statsTabs">
+    <button data-team="0" class="active home">ホーム</button>
+    <button data-team="1" class="away">アウェイ</button>
+  </div>
+  <div id="statsBody"></div>
+  <div class="row"><button class="bigbtn" id="closeStatsBtn">閉じる</button></div>
+</div>
+
+<!-- history sheet -->
 <div class="sheet-bg" id="histBg"></div>
 <div class="sheet" id="histSheet">
   <h3 id="histTitle">試合の履歴</h3>
@@ -273,23 +364,16 @@ button{font-family:inherit; color:inherit; border:none; background:none; cursor:
   </div>
 </div>
 
-<div id="shareCard"></div>
-
+<!-- settings sheet -->
 <div class="sheet-bg" id="sheetBg"></div>
 <div class="sheet" id="sheet">
   <h3>設定</h3>
-  <div class="field">
-    <label>ホーム チーム名</label>
-    <input type="text" id="inpHome" maxlength="16" placeholder="ホーム">
-  </div>
-  <div class="field">
-    <label>アウェイ チーム名</label>
-    <input type="text" id="inpAway" maxlength="16" placeholder="アウェイ">
-  </div>
+  <div class="field"><label>ホーム チーム名</label><input type="text" id="inpHome" maxlength="16" placeholder="ホーム"></div>
+  <div class="field"><label>アウェイ チーム名</label><input type="text" id="inpAway" maxlength="16" placeholder="アウェイ"></div>
   <div class="field">
     <label>試合形式</label>
     <div class="seg" id="segFormat">
-      <button data-bo="1">1セットマッチ</button>
+      <button data-bo="1">1セット</button>
       <button data-bo="3">3セットマッチ</button>
       <button data-bo="5">5セットマッチ</button>
     </div>
@@ -301,407 +385,412 @@ button{font-family:inherit; color:inherit; border:none; background:none; cursor:
   </div>
 </div>
 
+<div id="shareCard"></div>
+
 <script>
 "use strict";
-const LS_KEY = "vb_scoreboard_v1";
+const LS_KEY = "vb_scoreboard_v2";
+const HIST_KEY = "vb_history_v2";
 
 const DEFAULT = () => ({
-  bestOf: 5,
-  pointsPerSet: 25,
-  decidingPoints: 15,
-  winBy: 2,
-  timeoutsPerSet: 2,
-  teams: [
+  bestOf:5, pointsPerSet:25, decidingPoints:15, winBy:2, timeoutsPerSet:2,
+  teams:[
     {name:"ホーム", sets:0, points:0, timeouts:2},
     {name:"アウェイ", sets:0, points:0, timeouts:2},
   ],
-  serving: null,        // 0 | 1 | null
-  setNumber: 1,
-  completedSets: [],    // [{a, b}]
-  matchOver: false,
-  switchedThisSet: false,
+  rosters:[[],[]],          // per team: {num, name}
+  events:[],                // {set, team, type, player}  type: spike|block|ace|opp_error|point
+  serving:null, setNumber:1, completedSets:[], matchOver:false, switchedThisSet:false, savedId:null,
 });
 
 let state = load() || DEFAULT();
-let history = [];        // undo stack (snapshots, in-memory)
+let history = [];
 
-function load(){
-  try{ const s = JSON.parse(localStorage.getItem(LS_KEY)); return s && s.teams ? s : null; }
-  catch(e){ return null; }
-}
+function load(){ try{ const s=JSON.parse(localStorage.getItem(LS_KEY)); return s&&s.teams?migrate(s):null; }catch(e){ return null; } }
+function migrate(s){ if(!s.rosters) s.rosters=[[],[]]; if(!s.events) s.events=[]; return s; }
 function persist(){ try{ localStorage.setItem(LS_KEY, JSON.stringify(state)); }catch(e){} }
-function snapshot(){ history.push(JSON.stringify(state)); if(history.length>200) history.shift(); }
+function snapshot(){ history.push(JSON.stringify(state)); if(history.length>250) history.shift(); }
+function commit(){ render(); persist(); }
 
 function setsToWin(){ return Math.ceil(state.bestOf/2); }
-function isDecidingSet(){
-  const need = setsToWin();
-  return state.teams[0].sets === need-1 && state.teams[1].sets === need-1 && state.bestOf>1;
-}
-function targetPoints(){ return isDecidingSet() ? state.decidingPoints : state.pointsPerSet; }
+function isDecidingSet(){ const n=setsToWin(); return state.bestOf>1 && state.teams[0].sets===n-1 && state.teams[1].sets===n-1; }
+function targetPoints(){ return isDecidingSet()?state.decidingPoints:state.pointsPerSet; }
 
 /* ---------- scoring ---------- */
-function addPoint(t){
+function addPoint(t, type, player){
   if(state.matchOver) return;
   snapshot();
-  const team = state.teams[t];
+  state.events.push({set:state.setNumber, team:t, type:type||"point", player:(player!=null?player:null)});
+  const team=state.teams[t];
   team.points++;
-  state.serving = t;
+  state.serving=t;
   checkCourtSwitch();
-  const tgt = targetPoints();
-  const opp = state.teams[1-t].points;
-  if(team.points >= tgt && team.points - opp >= state.winBy){
-    completeSet(t);
-  }
+  const tgt=targetPoints(), opp=state.teams[1-t].points;
+  if(team.points>=tgt && team.points-opp>=state.winBy) completeSet(t);
   commit();
 }
-
 function minusPoint(t){
-  const team = state.teams[t];
+  const team=state.teams[t];
   if(team.points<=0) return;
   snapshot();
   team.points--;
+  // remove the most recent event for this team in the current set to keep stats aligned
+  for(let i=state.events.length-1;i>=0;i--){ if(state.events[i].team===t && state.events[i].set===state.setNumber){ state.events.splice(i,1); break; } }
   commit();
 }
-
 function completeSet(winner){
   state.completedSets.push({a:state.teams[0].points, b:state.teams[1].points});
   state.teams[winner].sets++;
-  const w = state.teams[winner];
-  if(w.sets >= setsToWin()){
-    state.matchOver = true;
-    saveMatchToHistory();
-    commit();
-    return;
-  }
-  // next set
-  state.teams[0].points = 0; state.teams[1].points = 0;
-  state.teams[0].timeouts = state.timeoutsPerSet;
-  state.teams[1].timeouts = state.timeoutsPerSet;
-  state.setNumber++;
-  state.serving = null;
-  state.switchedThisSet = false;
-  const dec = isDecidingSet();
-  setTimeout(()=> toast(`第${state.setNumber-1}セット終了 → 第${state.setNumber}セットへ`
-      + (dec ? " (最終セット・15点先取・8点でコートチェンジ)" : "")), 30);
+  if(state.teams[winner].sets>=setsToWin()){ state.matchOver=true; saveMatchToHistory(); return; }
+  state.teams[0].points=0; state.teams[1].points=0;
+  state.teams[0].timeouts=state.timeoutsPerSet; state.teams[1].timeouts=state.timeoutsPerSet;
+  state.setNumber++; state.serving=null; state.switchedThisSet=false;
+  const dec=isDecidingSet();
+  setTimeout(()=>toast(`第${state.setNumber-1}セット終了 → 第${state.setNumber}セットへ`+(dec?" (最終・15点先取・8点でコートチェンジ)":"")), 30);
 }
-
 function checkCourtSwitch(){
-  if(!isDecidingSet() || state.switchedThisSet) return;
-  if(state.teams[0].points>=8 || state.teams[1].points>=8){
-    state.switchedThisSet = true;
-    setTimeout(()=> toast("★ コートチェンジ (最終セット8点)"), 30);
-  }
+  if(!isDecidingSet()||state.switchedThisSet) return;
+  if(state.teams[0].points>=8||state.teams[1].points>=8){ state.switchedThisSet=true; setTimeout(()=>toast("★ コートチェンジ (最終セット8点)"),30); }
 }
-
 function timeout(t){
-  const team = state.teams[t];
+  const team=state.teams[t];
   if(team.timeouts<=0){ toast(`${team.name} はこのセットのタイムアウトを使い切りました`); return; }
-  snapshot();
-  team.timeouts--;
-  commit();
-  toast(`${team.name} タイムアウト (残り${team.timeouts})`);
+  snapshot(); team.timeouts--; commit(); toast(`${team.name} タイムアウト (残り${team.timeouts})`);
 }
-
-function toggleServe(){
-  snapshot();
-  state.serving = state.serving===null ? 0 : (state.serving===0 ? 1 : (state.serving===1 ? null : 0));
-  commit();
-}
-
-function undo(){
-  if(!history.length){ toast("これ以上戻せません"); return; }
-  state = JSON.parse(history.pop());
-  render(); persist();
-}
-
+function toggleServe(){ snapshot(); state.serving = state.serving===null?0:(state.serving===0?1:null); commit(); }
+function undo(){ if(!history.length){ toast("これ以上戻せません"); return; } state=JSON.parse(history.pop()); render(); persist(); }
 function resetMatch(){
-  const cfg = { bestOf: state.bestOf,
-    names:[state.teams[0].name, state.teams[1].name] };
-  state = DEFAULT();
-  state.bestOf = cfg.bestOf;
-  state.teams[0].name = cfg.names[0];
-  state.teams[1].name = cfg.names[1];
-  history = [];
-  commit();
+  const keep={bestOf:state.bestOf, names:[state.teams[0].name,state.teams[1].name], rosters:state.rosters};
+  state=DEFAULT();
+  state.bestOf=keep.bestOf; state.teams[0].name=keep.names[0]; state.teams[1].name=keep.names[1]; state.rosters=keep.rosters;
+  history=[]; commit();
 }
 
-function commit(){ render(); persist(); }
+/* ---------- point-entry action panel ---------- */
+const actWrap=document.getElementById("actWrap");
+let actTeam=null;
+function sideTapped(t){
+  if(state.matchOver) return;
+  if(state.rosters[t] && state.rosters[t].length>0){ openActionPanel(t); }
+  else addPoint(t, "point", null);   // no roster -> instant point
+}
+function openActionPanel(t){
+  actTeam=t;
+  const acc = t===0?getCss("--home"):getCss("--away");
+  document.getElementById("actSheet").style.setProperty("--acc", acc);
+  document.getElementById("actTeamName").textContent = state.teams[t].name;
+  document.getElementById("actStep1").style.display="";
+  document.getElementById("actStep2").style.display="none";
+  actWrap.classList.add("show");
+}
+function closeActionPanel(){ actWrap.classList.remove("show"); actTeam=null; }
+function chooseAction(type){
+  if(type==="opp_error"||type==="point"){ const t=actTeam; closeActionPanel(); addPoint(t,type,null); return; }
+  // needs player -> step 2
+  const labels={spike:"⚡ スパイク", block:"🧱 ブロック", ace:"🎯 サーブ得点"};
+  document.getElementById("actKindLabel").textContent=labels[type]||"";
+  buildPlayerGrid(type);
+  document.getElementById("actStep1").style.display="none";
+  document.getElementById("actStep2").style.display="";
+}
+function buildPlayerGrid(type){
+  const grid=document.getElementById("playerGrid"); grid.innerHTML="";
+  state.rosters[actTeam].forEach(p=>{
+    const b=document.createElement("button"); b.className="pbtn";
+    b.innerHTML=`<span class="num">${esc(p.num||"–")}</span>`+(p.name?`<span class="pn">${esc(p.name)}</span>`:"");
+    b.addEventListener("click",()=>{ const t=actTeam; closeActionPanel(); addPoint(t,type,p.num); });
+    grid.appendChild(b);
+  });
+  const u=document.createElement("button"); u.className="pbtn unknown";
+  u.innerHTML=`<span class="num">背番号なし</span>`;
+  u.addEventListener("click",()=>{ const t=actTeam; closeActionPanel(); addPoint(t,type,null); });
+  grid.appendChild(u);
+}
+
+/* ---------- stats ---------- */
+function playerStats(t){
+  return state.rosters[t].map(p=>{
+    const evs=state.events.filter(e=>e.team===t && e.player===p.num);
+    const spike=evs.filter(e=>e.type==="spike").length;
+    const block=evs.filter(e=>e.type==="block").length;
+    const ace=evs.filter(e=>e.type==="ace").length;
+    return {num:p.num, name:p.name, spike, block, ace, total:spike+block+ace};
+  });
+}
+function teamTotalPoints(t){
+  let s=state.teams[t].points;
+  state.completedSets.forEach(cs=> s += (t===0?cs.a:cs.b));
+  return s;
+}
 
 /* ---------- render ---------- */
 function render(){
-  const [h,a] = state.teams;
-  document.getElementById("nameHome").textContent = h.name;
-  document.getElementById("nameAway").textContent = a.name;
-  document.getElementById("scoreHome").textContent = h.points;
-  document.getElementById("scoreAway").textContent = a.points;
-  document.getElementById("toHome").textContent = h.timeouts;
-  document.getElementById("toAway").textContent = a.timeouts;
+  const [h,a]=state.teams;
+  document.getElementById("nameHome").textContent=h.name;
+  document.getElementById("nameAway").textContent=a.name;
+  document.getElementById("scoreHome").textContent=h.points;
+  document.getElementById("scoreAway").textContent=a.points;
+  document.getElementById("toHome").textContent=h.timeouts;
+  document.getElementById("toAway").textContent=a.timeouts;
+  document.getElementById("setNo").textContent=`第${state.setNumber}セット`;
+  const dec=isDecidingSet();
+  document.getElementById("deciding").style.display=dec?"":"none";
+  document.getElementById("fmt").textContent=`${state.bestOf===1?"1セット":state.bestOf+"セットマッチ"} / ${targetPoints()}点`;
+  renderDots("setsHome",h.sets); renderDots("setsAway",a.sets);
+  document.getElementById("setScores").textContent=state.completedSets.map((s,i)=>`(${i+1}) ${s.a}-${s.b}`).join("  ");
+  document.getElementById("serveHome").classList.toggle("on",state.serving===0);
+  document.getElementById("serveAway").classList.toggle("on",state.serving===1);
+  document.getElementById("hintHome").textContent = state.rosters[0].length?"タップで得点入力":"タップで +1";
+  document.getElementById("hintAway").textContent = state.rosters[1].length?"タップで得点入力":"タップで +1";
+  document.getElementById("undoBtn").disabled=history.length===0;
 
-  document.getElementById("setNo").textContent = `第${state.setNumber}セット`;
-  const dec = isDecidingSet();
-  document.getElementById("deciding").style.display = dec ? "" : "none";
-  const fmtLabel = state.bestOf===1 ? "1セットマッチ" : `${state.bestOf}セットマッチ`;
-  document.getElementById("fmt").textContent = `${fmtLabel} / ${targetPoints()}点先取`;
-
-  // sets-won dots
-  renderDots("setsHome", h.sets);
-  renderDots("setsAway", a.sets);
-
-  // completed sets line
-  const line = state.completedSets.map((s,i)=>`(${i+1}) ${s.a}-${s.b}`).join("  ");
-  document.getElementById("setScores").textContent = line;
-
-  // serve
-  document.getElementById("serveHome").classList.toggle("on", state.serving===0);
-  document.getElementById("serveAway").classList.toggle("on", state.serving===1);
-
-  document.getElementById("undoBtn").disabled = history.length===0;
-
-  // match over
-  const ov = document.getElementById("overlay");
+  const ov=document.getElementById("overlay");
   if(state.matchOver){
-    const winner = h.sets>a.sets ? h : a;
-    document.getElementById("winnerText").textContent = `${winner.name} の勝ち！`;
-    const games = state.completedSets.map(s=>`${s.a} - ${s.b}`).join("<br>");
-    document.getElementById("finalText").innerHTML =
-      `セットカウント ${h.sets} - ${a.sets}<br><br>${games}`;
+    const winner=h.sets>a.sets?h:a;
+    document.getElementById("winnerText").textContent=`${winner.name} の勝ち！`;
+    const games=state.completedSets.map(s=>`${s.a} - ${s.b}`).join("<br>");
+    document.getElementById("finalText").innerHTML=`セットカウント ${h.sets} - ${a.sets}<br><br>${games}`;
     ov.classList.add("show");
-  } else {
-    ov.classList.remove("show");
-  }
+  } else ov.classList.remove("show");
 }
-function renderDots(id, n){
-  const total = setsToWin();
-  const el = document.getElementById(id);
-  el.innerHTML = "";
-  for(let i=0;i<total;i++){
-    const d = document.createElement("div");
-    d.className = "dot" + (i<n ? " on" : "");
-    el.appendChild(d);
-  }
+function renderDots(id,n){
+  const total=setsToWin(), el=document.getElementById(id); el.innerHTML="";
+  for(let i=0;i<total;i++){ const d=document.createElement("div"); d.className="dot"+(i<n?" on":""); el.appendChild(d); }
 }
+function getCss(v){ return getComputedStyle(document.documentElement).getPropertyValue(v).trim(); }
 
 /* ---------- toast ---------- */
 let toastTimer;
-function toast(msg){
-  const t = document.getElementById("toast");
-  t.textContent = msg; t.classList.add("show");
-  clearTimeout(toastTimer);
-  toastTimer = setTimeout(()=> t.classList.remove("show"), 2600);
+function toast(msg){ const t=document.getElementById("toast"); t.textContent=msg; t.classList.add("show"); clearTimeout(toastTimer); toastTimer=setTimeout(()=>t.classList.remove("show"),2600); }
+
+/* ---------- helpers ---------- */
+function esc(s){ return String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+function clip(s,n){ s=String(s); return s.length>n?s.slice(0,n-1)+"…":s; }
+function formatDate(iso){ const d=new Date(iso), w=["日","月","火","水","木","金","土"][d.getDay()], p=n=>String(n).padStart(2,"0"); return `${d.getFullYear()}年${d.getMonth()+1}月${d.getDate()}日(${w}) ${p(d.getHours())}:${p(d.getMinutes())}`; }
+
+/* ---------- roster sheet ---------- */
+const rosterSheet=document.getElementById("rosterSheet"), rosterBg=document.getElementById("rosterBg");
+let rosterTeam=0;
+function openRoster(){ rosterTeam=0; document.querySelectorAll("#rosterTabs button").forEach(b=>setTab(b,+b.dataset.team===0)); renderRoster(); rosterSheet.classList.add("show"); rosterBg.classList.add("show"); }
+function setTab(btn,on){ btn.classList.toggle("active",on); }
+function renderRoster(){
+  const list=document.getElementById("rosterList"); list.innerHTML="";
+  state.rosters[rosterTeam].forEach((p,idx)=>{
+    const row=document.createElement("div"); row.className="rrow";
+    row.innerHTML=`<input class="num" inputmode="numeric" maxlength="3" value="${esc(p.num||"")}" placeholder="番号">
+      <input class="nm" maxlength="16" value="${esc(p.name||"")}" placeholder="名前（任意）">
+      <button class="del" aria-label="削除">🗑</button>`;
+    row.querySelector(".num").addEventListener("input",e=>p.num=e.target.value.trim());
+    row.querySelector(".nm").addEventListener("input",e=>p.name=e.target.value.trim());
+    row.querySelector(".del").addEventListener("click",()=>{ state.rosters[rosterTeam].splice(idx,1); persist(); renderRoster(); });
+    list.appendChild(row);
+  });
+}
+function closeRoster(){
+  state.rosters[rosterTeam]=state.rosters[rosterTeam].filter(p=>(p.num&&p.num!=="")||(p.name&&p.name!==""));
+  rosterSheet.classList.remove("show"); rosterBg.classList.remove("show"); commit();
 }
 
-/* ---------- events ---------- */
-document.getElementById("sideHome").addEventListener("click", e=>{
-  if(e.target.closest(".minictl")) return; addPoint(0);
-});
-document.getElementById("sideAway").addEventListener("click", e=>{
-  if(e.target.closest(".minictl")) return; addPoint(1);
-});
-document.querySelectorAll("[data-minus]").forEach(b=>
-  b.addEventListener("click", e=>{ e.stopPropagation(); minusPoint(+b.dataset.minus); }));
-document.querySelectorAll("[data-to]").forEach(b=>
-  b.addEventListener("click", e=>{ e.stopPropagation(); timeout(+b.dataset.to); }));
-document.getElementById("undoBtn").addEventListener("click", undo);
-document.getElementById("serveToggleBtn").addEventListener("click", toggleServe);
-document.getElementById("newMatchBtn").addEventListener("click", resetMatch);
-
-/* settings sheet */
-const sheet = document.getElementById("sheet"), sheetBg = document.getElementById("sheetBg");
-function openSheet(){
-  document.getElementById("inpHome").value = state.teams[0].name;
-  document.getElementById("inpAway").value = state.teams[1].name;
-  document.querySelectorAll("#segFormat button").forEach(b=>
-    b.classList.toggle("active", +b.dataset.bo===state.bestOf));
-  updateFormatHint();
-  sheet.classList.add("show"); sheetBg.classList.add("show");
-}
-function closeSheet(){
-  const hn = document.getElementById("inpHome").value.trim() || "ホーム";
-  const an = document.getElementById("inpAway").value.trim() || "アウェイ";
-  if(hn!==state.teams[0].name || an!==state.teams[1].name){
-    state.teams[0].name = hn; state.teams[1].name = an; commit();
+/* ---------- stats sheet ---------- */
+const statsSheet=document.getElementById("statsSheet"), statsBg=document.getElementById("statsBg");
+let statsTeam=0;
+function openStats(){ statsTeam=0; document.querySelectorAll("#statsTabs button").forEach(b=>setTab(b,+b.dataset.team===0)); renderStats(); statsSheet.classList.add("show"); statsBg.classList.add("show"); }
+function renderStats(){
+  const body=document.getElementById("statsBody");
+  const t=statsTeam;
+  if(state.rosters[t].length===0){
+    body.innerHTML=`<div class="stat-empty">${esc(state.teams[t].name)} の選手が未登録です。<br>「👥 選手」から背番号を登録すると、<br>得点入力時に選手を選べてスタッツが貯まります。</div>`;
+    return;
   }
-  sheet.classList.remove("show"); sheetBg.classList.remove("show");
+  const rows=playerStats(t).sort((x,y)=>y.total-x.total);
+  const topTotal=rows.length?rows[0].total:0;
+  const body_rows=rows.map(r=>`<tr class="${r.total>0&&r.total===topTotal?"top":""}">
+    <td class="pl"><span class="no">${esc(r.num||"–")}</span><span>${esc(r.name||"")}</span></td>
+    <td class="total">${r.total}</td><td>${r.spike}</td><td>${r.block}</td><td>${r.ace}</td></tr>`).join("");
+  body.innerHTML=`
+    <div class="stat-total"><div><span class="lbl">チーム総得点</span> <span class="big">${teamTotalPoints(t)}</span></div>
+      <div style="text-align:right"><span class="lbl">記録した得点</span> <span class="big">${playerStats(t).reduce((s,r)=>s+r.total,0)}</span></div></div>
+    <div style="overflow-x:auto"><table class="stbl">
+      <thead><tr><th>選手</th><th>得点</th><th>ｽﾊﾟｲｸ</th><th>ﾌﾞﾛｯｸ</th><th>ｻｰﾌﾞ</th></tr></thead>
+      <tbody>${body_rows}</tbody></table></div>
+    <p class="hint" style="margin-top:14px">※「得点」はスパイク・ブロック・サーブ得点の合計。相手のミスや未記録の得点はチーム総得点にのみ入ります。</p>`;
 }
-function updateFormatHint(){
-  const bo = state.bestOf;
-  const need = Math.ceil(bo/2);
-  document.getElementById("formatHint").textContent =
-    bo===1 ? "1セットのみ・25点先取（2点差）。"
-    : `先に${need}セット先取で勝ち。最終セットは15点先取（8点でコートチェンジ）。それ以外は25点先取、いずれも2点差がつくまで継続（デュース）。`;
-}
-document.getElementById("settingsBtn").addEventListener("click", openSheet);
-document.getElementById("closeSheetBtn").addEventListener("click", closeSheet);
-sheetBg.addEventListener("click", closeSheet);
-document.getElementById("resetMatchBtn").addEventListener("click", ()=>{
-  if(confirm("現在の試合を最初からやり直します。よろしいですか？")){ resetMatch(); closeSheet(); }
-});
-document.querySelectorAll("#segFormat button").forEach(b=>
-  b.addEventListener("click", ()=>{
-    const newBo = +b.dataset.bo;
-    if(state.completedSets.length>0 || state.teams[0].points>0 || state.teams[1].points>0){
-      if(!confirm("試合形式を変えると現在の試合をリセットします。よろしいですか？")) return;
-    }
-    state.bestOf = newBo;
-    resetMatch();
-    document.querySelectorAll("#segFormat button").forEach(x=>
-      x.classList.toggle("active", x===b));
-    updateFormatHint();
-  }));
 
 /* ---------- match history ---------- */
-const HIST_KEY = "vb_history_v1";
-function loadHistory(){ try{ return JSON.parse(localStorage.getItem(HIST_KEY)) || []; }catch(e){ return []; } }
+function loadHistory(){ try{ return JSON.parse(localStorage.getItem(HIST_KEY))||[]; }catch(e){ return []; } }
 function saveHistory(list){ try{ localStorage.setItem(HIST_KEY, JSON.stringify(list)); }catch(e){} }
-
 function currentMatchObject(){
-  const [h,a] = state.teams;
-  return {
-    id: state.savedId || ("m"+Date.now()),
-    date: new Date().toISOString(),
-    bestOf: state.bestOf,
-    teams:[{name:h.name, sets:h.sets},{name:a.name, sets:a.sets}],
-    sets: state.completedSets.map(s=>({a:s.a, b:s.b})),
-    winner: h.sets>a.sets ? 0 : 1,
-  };
+  const [h,a]=state.teams;
+  return { id:state.savedId||("m"+Date.now()), date:new Date().toISOString(), bestOf:state.bestOf,
+    teams:[{name:h.name,sets:h.sets},{name:a.name,sets:a.sets}],
+    sets:state.completedSets.map(s=>({a:s.a,b:s.b})), winner:h.sets>a.sets?0:1,
+    rosters:JSON.parse(JSON.stringify(state.rosters)), events:JSON.parse(JSON.stringify(state.events)) };
 }
-function saveMatchToHistory(){
-  if(state.savedId) return;
-  const entry = currentMatchObject();
-  const list = loadHistory();
-  list.unshift(entry);
-  saveHistory(list);
-  state.savedId = entry.id;
+function saveMatchToHistory(){ if(state.savedId) return; const e=currentMatchObject(); const l=loadHistory(); l.unshift(e); saveHistory(l); state.savedId=e.id; }
+function topScorer(m){
+  if(!m.events||!m.events.length) return null;
+  let best=null;
+  m.teams.forEach((tm,t)=>{ (m.rosters?m.rosters[t]:[]).forEach(p=>{
+    const tot=m.events.filter(e=>e.team===t&&e.player===p.num&&["spike","block","ace"].includes(e.type)).length;
+    if(tot>0&&(!best||tot>best.total)) best={num:p.num,name:p.name,total:tot,team:tm.name};
+  }); });
+  return best;
 }
 
-function esc(s){ return String(s).replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
-function clip(s,n){ s=String(s); return s.length>n ? s.slice(0,n-1)+"…" : s; }
-function formatDate(iso){
-  const d = new Date(iso);
-  const w = ["日","月","火","水","木","金","土"][d.getDay()];
-  const p = n=>String(n).padStart(2,"0");
-  return `${d.getFullYear()}年${d.getMonth()+1}月${d.getDate()}日(${w}) ${p(d.getHours())}:${p(d.getMinutes())}`;
-}
-
-/* history sheet */
-const histSheet = document.getElementById("histSheet"), histBg = document.getElementById("histBg");
-let histView = "list", histCurrentId = null;
+const histSheet=document.getElementById("histSheet"), histBg=document.getElementById("histBg");
+let histView="list", histCurrentId=null;
 function openHistory(){ histView="list"; histCurrentId=null; renderHist(); histSheet.classList.add("show"); histBg.classList.add("show"); }
-function closeHistory(){ histSheet.classList.remove("show"); histBg.classList.remove("show"); }
 function histItemHTML(m){
-  const n0 = m.winner===0 ? `<span class="win">${esc(m.teams[0].name)}</span>` : esc(m.teams[0].name);
-  const n1 = m.winner===1 ? `<span class="win">${esc(m.teams[1].name)}</span>` : esc(m.teams[1].name);
-  const fmt = m.bestOf===1 ? "1セット" : m.bestOf+"セットマッチ";
-  return `<div class="hist-item" data-open="${m.id}">
-    <div class="hi-main">
-      <div class="hi-teams">${n0} <span style="color:var(--muted)">vs</span> ${n1}</div>
-      <div class="hi-meta">${formatDate(m.date)} ・ ${fmt}</div>
-    </div>
+  const n0=m.winner===0?`<span class="win">${esc(m.teams[0].name)}</span>`:esc(m.teams[0].name);
+  const n1=m.winner===1?`<span class="win">${esc(m.teams[1].name)}</span>`:esc(m.teams[1].name);
+  return `<div class="hist-item" data-open="${m.id}"><div class="hi-main">
+    <div class="hi-teams">${n0} <span style="color:var(--muted)">vs</span> ${n1}</div>
+    <div class="hi-meta">${formatDate(m.date)} ・ ${m.bestOf===1?"1セット":m.bestOf+"セットマッチ"}</div></div>
     <div class="hi-count">${m.teams[0].sets}-${m.teams[1].sets}</div>
-    <button class="hi-del" data-del="${m.id}" aria-label="削除">🗑</button>
-  </div>`;
+    <button class="hi-del" data-del="${m.id}" aria-label="削除">🗑</button></div>`;
 }
 function detailHTML(m){
-  const rows = m.sets.map((s,i)=>`<div class="r"><span>第${i+1}セット</span><span>${s.a} - ${s.b}</span></div>`).join("");
+  const rows=m.sets.map((s,i)=>`<div class="r"><span>第${i+1}セット</span><span>${s.a} - ${s.b}</span></div>`).join("");
+  const ts=topScorer(m);
   return `<div class="hist-detail">
     <div class="hi-meta" style="margin-bottom:12px">${formatDate(m.date)} ・ ${m.bestOf===1?"1セット":m.bestOf+"セットマッチ"}</div>
     <div style="font-size:1.35rem;font-weight:800;margin-bottom:4px">セットカウント ${m.teams[0].sets} - ${m.teams[1].sets}</div>
     <div class="hi-meta" style="margin-bottom:16px">${esc(m.teams[0].name)} vs ${esc(m.teams[1].name)}</div>
-    <div class="hd-sets">${rows || '<div class="hi-meta">セット記録なし</div>'}</div>
-  </div>`;
+    <div class="hd-sets">${rows||'<div class="hi-meta">セット記録なし</div>'}</div>
+    ${ts?`<p class="hint" style="margin-top:14px">最多得点：#${esc(ts.num||"")} ${esc(ts.name||"")}（${ts.total}点・${esc(ts.team)}）</p>`:""}</div>`;
 }
 function renderHist(){
-  const body = document.getElementById("histBody");
-  const title = document.getElementById("histTitle");
-  const backBtn = document.getElementById("histBackBtn");
-  const shareBtn = document.getElementById("histShareBtn");
-  const list = loadHistory();
-  if(histView==="detail" && histCurrentId){
-    const m = list.find(x=>x.id===histCurrentId);
+  const body=document.getElementById("histBody"), title=document.getElementById("histTitle");
+  const backBtn=document.getElementById("histBackBtn"), shareBtn=document.getElementById("histShareBtn");
+  const list=loadHistory();
+  if(histView==="detail"&&histCurrentId){
+    const m=list.find(x=>x.id===histCurrentId);
     if(!m){ histView="list"; return renderHist(); }
-    title.textContent = "試合結果";
-    backBtn.style.display=""; shareBtn.style.display="";
-    body.innerHTML = detailHTML(m);
-    return;
+    title.textContent="試合結果"; backBtn.style.display=""; shareBtn.style.display="";
+    body.innerHTML=detailHTML(m); return;
   }
-  title.textContent = "試合の履歴";
-  backBtn.style.display="none"; shareBtn.style.display="none";
-  body.innerHTML = list.length
-    ? `<div class="hist-list">${list.map(histItemHTML).join("")}</div>`
-    : `<div class="hist-empty">保存された試合はまだありません。<br>試合が終わると自動で保存されます。</div>`;
+  title.textContent="試合の履歴"; backBtn.style.display="none"; shareBtn.style.display="none";
+  body.innerHTML=list.length?`<div class="hist-list">${list.map(histItemHTML).join("")}</div>`
+    :`<div class="hist-empty">保存された試合はまだありません。<br>試合が終わると自動で保存されます。</div>`;
 }
 
 /* ---------- share as image ---------- */
 function roundRect(x,rx,ry,w,h,r){ x.beginPath(); x.moveTo(rx+r,ry); x.arcTo(rx+w,ry,rx+w,ry+h,r); x.arcTo(rx+w,ry+h,rx,ry+h,r); x.arcTo(rx,ry+h,rx,ry,r); x.arcTo(rx,ry,rx+w,ry,r); x.closePath(); }
 function buildResultCanvas(m){
-  const s=2, W=720, rows=m.sets.length, H=440 + rows*68 + 70;
+  const ts=topScorer(m), s=2, W=720, rows=m.sets.length, H=440+rows*68+(ts?52:0)+70;
   const c=document.createElement("canvas"); c.width=W*s; c.height=H*s;
   const x=c.getContext("2d"); x.scale(s,s);
   const F='-apple-system,"Hiragino Kaku Gothic ProN","Yu Gothic",Meiryo,sans-serif';
   const g=x.createLinearGradient(0,0,W,H); g.addColorStop(0,"#12202e"); g.addColorStop(1,"#0c1620");
   x.fillStyle=g; x.fillRect(0,0,W,H);
-  x.textAlign="left"; x.fillStyle="#9fb0c3"; x.font=`600 30px ${F}`;
-  x.fillText("バレーボール 試合結果", 52, 68);
-  x.font=`400 22px ${F}`; x.fillText(formatDate(m.date), 52, 104);
-  const [t0,t1]=m.teams, lx=W*0.28, rx=W*0.72;
-  x.textAlign="center";
+  x.textAlign="left"; x.fillStyle="#9fb0c3"; x.font=`600 30px ${F}`; x.fillText("バレーボール 試合結果",52,68);
+  x.font=`400 22px ${F}`; x.fillText(formatDate(m.date),52,104);
+  const [t0,t1]=m.teams, lx=W*0.28, rx=W*0.72; x.textAlign="center";
   x.font=`800 38px ${F}`;
-  x.fillStyle = m.winner===0?"#f4d03f":"#eef3f8"; x.fillText(clip(t0.name,10), lx,190);
-  x.fillStyle = m.winner===1?"#f4d03f":"#eef3f8"; x.fillText(clip(t1.name,10), rx,190);
+  x.fillStyle=m.winner===0?"#f4d03f":"#eef3f8"; x.fillText(clip(t0.name,10),lx,190);
+  x.fillStyle=m.winner===1?"#f4d03f":"#eef3f8"; x.fillText(clip(t1.name,10),rx,190);
   x.font=`800 92px ${F}`;
-  x.fillStyle = m.winner===0?"#f4d03f":"#eef3f8"; x.fillText(String(t0.sets), lx,296);
-  x.fillStyle = m.winner===1?"#f4d03f":"#eef3f8"; x.fillText(String(t1.sets), rx,296);
-  x.fillStyle="#6b7d92"; x.font=`800 34px ${F}`; x.fillText("-", W/2, 285);
-  x.fillStyle="#9fb0c3"; x.font=`400 22px ${F}`;
-  x.fillText(m.bestOf===1?"1セットマッチ":m.bestOf+"セットマッチ", W/2, 350);
+  x.fillStyle=m.winner===0?"#f4d03f":"#eef3f8"; x.fillText(String(t0.sets),lx,296);
+  x.fillStyle=m.winner===1?"#f4d03f":"#eef3f8"; x.fillText(String(t1.sets),rx,296);
+  x.fillStyle="#6b7d92"; x.font=`800 34px ${F}`; x.fillText("-",W/2,285);
+  x.fillStyle="#9fb0c3"; x.font=`400 22px ${F}`; x.fillText(m.bestOf===1?"1セットマッチ":m.bestOf+"セットマッチ",W/2,350);
   let y=400;
   for(let i=0;i<rows;i++){
     roundRect(x,52,y,W-104,56,12); x.fillStyle="rgba(255,255,255,.05)"; x.fill();
-    x.fillStyle="#9fb0c3"; x.font=`400 24px ${F}`; x.textAlign="left"; x.fillText(`第${i+1}セット`, 74, y+37);
-    x.fillStyle="#eef3f8"; x.font=`700 26px ${F}`; x.textAlign="right"; x.fillText(`${m.sets[i].a} - ${m.sets[i].b}`, W-74, y+37);
+    x.fillStyle="#9fb0c3"; x.font=`400 24px ${F}`; x.textAlign="left"; x.fillText(`第${i+1}セット`,74,y+37);
+    x.fillStyle="#eef3f8"; x.font=`700 26px ${F}`; x.textAlign="right"; x.fillText(`${m.sets[i].a} - ${m.sets[i].b}`,W-74,y+37);
     y+=68;
   }
-  x.fillStyle="#5b6c80"; x.font=`400 18px ${F}`; x.textAlign="right"; x.fillText("バレー スコアボード", W-52, H-40);
+  if(ts){ x.fillStyle="#f4d03f"; x.font=`700 22px ${F}`; x.textAlign="left"; x.fillText(`★ 最多得点：#${ts.num||""} ${ts.name||""}（${ts.total}点）`,52,y+30); y+=52; }
+  x.fillStyle="#5b6c80"; x.font=`400 18px ${F}`; x.textAlign="right"; x.fillText("バレー スコアボード",W-52,H-40);
   return c;
 }
 function shareMatch(m){
-  const canvas = buildResultCanvas(m);
-  canvas.toBlob(async (blob)=>{
+  buildResultCanvas(m).toBlob(async blob=>{
     if(!blob){ toast("画像の生成に失敗しました"); return; }
-    const fname = `volleyball_${new Date(m.date).toISOString().slice(0,10)}.png`;
-    const file = new File([blob], fname, {type:"image/png"});
-    if(navigator.canShare && navigator.canShare({files:[file]})){
-      try{ await navigator.share({files:[file], title:"試合結果"}); return; }
-      catch(e){ if(e && e.name==="AbortError") return; }
+    const fname=`volleyball_${new Date(m.date).toISOString().slice(0,10)}.png`;
+    const file=new File([blob],fname,{type:"image/png"});
+    if(navigator.canShare&&navigator.canShare({files:[file]})){
+      try{ await navigator.share({files:[file],title:"試合結果"}); return; }catch(e){ if(e&&e.name==="AbortError") return; }
     }
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a"); a.href=url; a.download=fname; document.body.appendChild(a); a.click(); a.remove();
-    setTimeout(()=>URL.revokeObjectURL(url), 5000);
-    toast("結果を画像で保存しました");
-  }, "image/png");
+    const url=URL.createObjectURL(blob); const a=document.createElement("a"); a.href=url; a.download=fname; document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(()=>URL.revokeObjectURL(url),5000); toast("結果を画像で保存しました");
+  },"image/png");
 }
 
-document.getElementById("historyBtn").addEventListener("click", openHistory);
-document.getElementById("closeHistBtn").addEventListener("click", closeHistory);
-histBg.addEventListener("click", closeHistory);
-document.getElementById("histBackBtn").addEventListener("click", ()=>{ histView="list"; histCurrentId=null; renderHist(); });
-document.getElementById("histShareBtn").addEventListener("click", ()=>{
-  const m = loadHistory().find(x=>x.id===histCurrentId); if(m) shareMatch(m);
-});
-document.getElementById("shareResultBtn").addEventListener("click", ()=> shareMatch(currentMatchObject()));
-document.getElementById("histBody").addEventListener("click", e=>{
-  const del = e.target.closest("[data-del]");
-  if(del){ e.stopPropagation();
-    if(confirm("この試合の記録を削除しますか？")){ saveHistory(loadHistory().filter(x=>x.id!==del.dataset.del)); renderHist(); }
-    return;
-  }
-  const open = e.target.closest("[data-open]");
-  if(open){ histView="detail"; histCurrentId=open.dataset.open; renderHist(); }
+/* ---------- settings sheet ---------- */
+const sheet=document.getElementById("sheet"), sheetBg=document.getElementById("sheetBg");
+function openSheet(){
+  document.getElementById("inpHome").value=state.teams[0].name;
+  document.getElementById("inpAway").value=state.teams[1].name;
+  document.querySelectorAll("#segFormat button").forEach(b=>b.classList.toggle("active",+b.dataset.bo===state.bestOf));
+  updateFormatHint(); sheet.classList.add("show"); sheetBg.classList.add("show");
+}
+function closeSheet(){
+  const hn=document.getElementById("inpHome").value.trim()||"ホーム";
+  const an=document.getElementById("inpAway").value.trim()||"アウェイ";
+  if(hn!==state.teams[0].name||an!==state.teams[1].name){ state.teams[0].name=hn; state.teams[1].name=an; commit(); }
+  sheet.classList.remove("show"); sheetBg.classList.remove("show");
+}
+function updateFormatHint(){
+  const bo=state.bestOf, need=Math.ceil(bo/2);
+  document.getElementById("formatHint").textContent = bo===1?"1セットのみ・25点先取（2点差）。"
+    :`先に${need}セット先取で勝ち。最終セットは15点先取（8点でコートチェンジ）。それ以外は25点先取、いずれも2点差がつくまで継続（デュース）。`;
+}
+
+/* ---------- events ---------- */
+document.getElementById("sideHome").addEventListener("click",e=>{ if(e.target.closest(".minictl"))return; sideTapped(0); });
+document.getElementById("sideAway").addEventListener("click",e=>{ if(e.target.closest(".minictl"))return; sideTapped(1); });
+document.querySelectorAll("[data-minus]").forEach(b=>b.addEventListener("click",e=>{ e.stopPropagation(); minusPoint(+b.dataset.minus); }));
+document.querySelectorAll("[data-to]").forEach(b=>b.addEventListener("click",e=>{ e.stopPropagation(); timeout(+b.dataset.to); }));
+document.getElementById("undoBtn").addEventListener("click",undo);
+document.getElementById("serveToggleBtn").addEventListener("click",toggleServe);
+document.getElementById("newMatchBtn").addEventListener("click",resetMatch);
+
+document.querySelectorAll("#actStep1 [data-act]").forEach(b=>b.addEventListener("click",()=>chooseAction(b.dataset.act)));
+document.getElementById("actClose").addEventListener("click",closeActionPanel);
+document.getElementById("actBack").addEventListener("click",()=>{ document.getElementById("actStep2").style.display="none"; document.getElementById("actStep1").style.display=""; });
+actWrap.addEventListener("click",e=>{ if(e.target===actWrap) closeActionPanel(); });
+
+document.getElementById("rosterBtn").addEventListener("click",openRoster);
+document.getElementById("closeRosterBtn").addEventListener("click",closeRoster);
+rosterBg.addEventListener("click",closeRoster);
+document.getElementById("addPlayerBtn").addEventListener("click",()=>{ state.rosters[rosterTeam].push({num:"",name:""}); renderRoster(); });
+document.querySelectorAll("#rosterTabs button").forEach(b=>b.addEventListener("click",()=>{
+  rosterTeam=+b.dataset.team; document.querySelectorAll("#rosterTabs button").forEach(x=>setTab(x,x===b)); renderRoster();
+}));
+
+document.getElementById("statsBtn").addEventListener("click",openStats);
+document.getElementById("closeStatsBtn").addEventListener("click",()=>{ statsSheet.classList.remove("show"); statsBg.classList.remove("show"); });
+statsBg.addEventListener("click",()=>{ statsSheet.classList.remove("show"); statsBg.classList.remove("show"); });
+document.querySelectorAll("#statsTabs button").forEach(b=>b.addEventListener("click",()=>{
+  statsTeam=+b.dataset.team; document.querySelectorAll("#statsTabs button").forEach(x=>setTab(x,x===b)); renderStats();
+}));
+
+document.getElementById("historyBtn").addEventListener("click",openHistory);
+document.getElementById("closeHistBtn").addEventListener("click",()=>{ histSheet.classList.remove("show"); histBg.classList.remove("show"); });
+histBg.addEventListener("click",()=>{ histSheet.classList.remove("show"); histBg.classList.remove("show"); });
+document.getElementById("histBackBtn").addEventListener("click",()=>{ histView="list"; histCurrentId=null; renderHist(); });
+document.getElementById("histShareBtn").addEventListener("click",()=>{ const m=loadHistory().find(x=>x.id===histCurrentId); if(m) shareMatch(m); });
+document.getElementById("shareResultBtn").addEventListener("click",()=>shareMatch(currentMatchObject()));
+document.getElementById("histBody").addEventListener("click",e=>{
+  const del=e.target.closest("[data-del]");
+  if(del){ e.stopPropagation(); if(confirm("この試合の記録を削除しますか？")){ saveHistory(loadHistory().filter(x=>x.id!==del.dataset.del)); renderHist(); } return; }
+  const open=e.target.closest("[data-open]"); if(open){ histView="detail"; histCurrentId=open.dataset.open; renderHist(); }
 });
 
-// prevent accidental double-tap zoom
-document.addEventListener("dblclick", e=> e.preventDefault(), {passive:false});
+document.getElementById("settingsBtn").addEventListener("click",openSheet);
+document.getElementById("closeSheetBtn").addEventListener("click",closeSheet);
+sheetBg.addEventListener("click",closeSheet);
+document.getElementById("resetMatchBtn").addEventListener("click",()=>{ if(confirm("現在の試合を最初からやり直します。よろしいですか？（選手登録は残ります）")){ resetMatch(); closeSheet(); } });
+document.querySelectorAll("#segFormat button").forEach(b=>b.addEventListener("click",()=>{
+  const nb=+b.dataset.bo;
+  if(state.completedSets.length>0||state.teams[0].points>0||state.teams[1].points>0){ if(!confirm("試合形式を変えると現在の試合をリセットします。よろしいですか？")) return; }
+  state.bestOf=nb; resetMatch();
+  document.querySelectorAll("#segFormat button").forEach(x=>x.classList.toggle("active",x===b)); updateFormatHint();
+}));
 
+document.addEventListener("dblclick",e=>e.preventDefault(),{passive:false});
 render();
 </script>
 </body>
