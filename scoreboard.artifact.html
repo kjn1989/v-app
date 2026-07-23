@@ -236,6 +236,29 @@ input{font-family:inherit;}
 .stbl tr.top td{background:rgba(244,208,63,.06);}
 .stbl td .dim{color:#5b6c80;}
 .stbl td .hi{color:var(--good); font-weight:800;}
+.stbl tr.tap{cursor:pointer;}
+.stbl tr.tap:active td{background:rgba(255,255,255,.05);}
+.stbl td .chev{color:var(--muted); font-size:.8rem;}
+/* stats view sub-tabs */
+.statsview{display:flex; gap:6px; margin-bottom:12px;}
+.statsview button{flex:1; padding:8px; border-radius:9px; background:var(--ink); border:1px solid var(--line); font-weight:700; font-size:.86rem;}
+.statsview button.active{background:var(--ink-3); border-color:var(--muted); color:var(--text);}
+.skillsub{display:flex; gap:6px; margin-bottom:12px;}
+.skillsub button{flex:1; padding:7px; border-radius:8px; background:var(--ink); border:1px solid var(--line); font-weight:700; font-size:.82rem;}
+.skillsub button.active{background:var(--ball); border-color:var(--ball); color:#241205;}
+/* player detail */
+.pd-head{display:flex; align-items:center; gap:10px; margin-bottom:14px;}
+.pd-back{padding:7px 12px; border-radius:9px; background:var(--ink-3); border:1px solid var(--line); font-weight:700; font-size:.82rem;}
+.pd-name{font-size:1.3rem; font-weight:800;}
+.pd-name .no{color:var(--ball); margin-right:6px;}
+.pd-grid{display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-bottom:16px;}
+.pd-cell{background:var(--ink); border:1px solid var(--line); border-radius:11px; padding:11px 8px; text-align:center;}
+.pd-cell .l{font-size:.7rem; color:var(--muted);}
+.pd-cell .v{font-size:1.5rem; font-weight:800; font-variant-numeric:tabular-nums; margin-top:2px;}
+.pd-cell .v.g{color:var(--good);}
+.pd-sec{font-size:.82rem; font-weight:800; color:var(--muted); margin:14px 0 8px;}
+.pd-row{display:flex; justify-content:space-between; padding:8px 12px; background:var(--ink); border-radius:9px; border:1px solid var(--line); margin-bottom:6px; font-size:.9rem;}
+.pd-row .v{font-weight:800; font-variant-numeric:tabular-nums;}
 
 /* ---- court charting (配球記録) — 1画面レイアウト ---- */
 .courtwrap{
@@ -381,7 +404,6 @@ input{font-family:inherit;}
   </div>
   <div class="setscores" id="setScores"></div>
   <div class="tools">
-    <button class="iconbtn" id="courtBtn"><span class="ic">🏐</span><span>配球</span></button>
     <button class="iconbtn" id="rosterBtn"><span class="ic">👥</span><span>選手</span></button>
     <button class="iconbtn" id="statsBtn"><span class="ic">📊</span><span>スタッツ</span></button>
     <button class="iconbtn" id="historyBtn"><span class="ic">📋</span><span>履歴</span></button>
@@ -485,6 +507,11 @@ input{font-family:inherit;}
   <div class="tabs" id="statsTabs">
     <button data-team="0" class="active home">ホーム</button>
     <button data-team="1" class="away">アウェイ</button>
+  </div>
+  <div class="statsview" id="statsView">
+    <button data-v="score" class="active">得点</button>
+    <button data-v="chart">配球</button>
+    <button data-v="log">経過</button>
   </div>
   <div id="statsBody"></div>
   <div class="row"><button class="bigbtn" id="closeStatsBtn">閉じる</button></div>
@@ -863,37 +890,125 @@ function closeRoster(){
   rosterSheet.classList.remove("show"); rosterBg.classList.remove("show"); commit();
 }
 
-/* ---------- stats sheet ---------- */
+/* ---------- stats sheet（得点 / 配球 / 経過 ＋ 個人詳細） ---------- */
 const statsSheet=document.getElementById("statsSheet"), statsBg=document.getElementById("statsBg");
-let statsTeam=0;
-function openStats(){ statsTeam=0; document.querySelectorAll("#statsTabs button").forEach(b=>setTab(b,+b.dataset.team===0)); renderStats(); statsSheet.classList.add("show"); statsBg.classList.add("show"); }
+let statsTeam=0, statsView="score", statsSkill="serve", statsDetailKey=null;
+function openStats(){ statsTeam=0; statsView="score"; statsDetailKey=null;
+  document.querySelectorAll("#statsTabs button").forEach(b=>setTab(b,+b.dataset.team===0));
+  document.querySelectorAll("#statsView button").forEach(b=>b.classList.toggle("active",b.dataset.v==="score"));
+  renderStats(); statsSheet.classList.add("show"); statsBg.classList.add("show");
+}
 function renderStats(){
-  const body=document.getElementById("statsBody");
-  const t=statsTeam;
-  if(state.rosters[t].length===0){
-    body.innerHTML=`<div class="stat-empty">${esc(state.teams[t].name)} の選手が未登録です。<br>「👥 選手」から背番号を登録すると、<br>得点入力時に選手を選べてスタッツが貯まります。</div>`;
+  const body=document.getElementById("statsBody"), t=statsTeam;
+  document.getElementById("statsView").style.display = statsDetailKey ? "none" : "";
+  if(statsDetailKey){ renderPlayerDetail(); return; }
+  if(state.rosters[t].length===0 && statsView!=="log"){
+    body.innerHTML=`<div class="stat-empty">${esc(state.teams[t].name)} の選手が未登録です。<br>「👥 選手」から登録すると、得点入力で選手を選べてスタッツが貯まります。</div>`;
     return;
   }
-  const rows=playerStats(t).sort((x,y)=>y.points-x.points || (y.rate||0)-(x.rate||0));
-  const topPts=rows.length?rows[0].points:0;
+  if(statsView==="score") renderScoreStats();
+  else if(statsView==="chart") renderChartStats();
+  else renderLogStats();
+}
+function renderScoreStats(){
+  const body=document.getElementById("statsBody"), t=statsTeam;
+  const list=playerStats(t).map((r,i)=>({r, p:state.rosters[t][i]})).sort((a,b)=>b.r.points-a.r.points || (b.r.rate||0)-(a.r.rate||0));
+  const topPts=list.length?list[0].r.points:0;
   const pct=r=> r.rate==null ? '<span class="dim">-</span>' : `<span class="${r.rate>=0.5?"hi":""}">${Math.round(r.rate*100)}%</span>`;
-  const body_rows=rows.map(r=>`<tr class="${r.points>0&&r.points===topPts?"top":""}">
-    <td class="pl"><span class="no">${esc(r.num||"–")}</span><span>${esc(r.name||"")}</span></td>
-    <td class="total">${r.points}</td>
-    <td>${pct(r)}</td>
+  const body_rows=list.map(({r,p})=>`<tr class="tap ${r.points>0&&r.points===topPts?"top":""}" data-pkey="${esc(playerKey(p))}">
+    <td class="pl"><span class="no">${esc(p.num||"")}</span><span>${esc(p.name||(p.num?"":"–"))}</span></td>
+    <td class="total">${r.points}</td><td>${pct(r)}</td>
     <td>${r.kill}</td><td>${r.spikeMiss||'<span class="dim">0</span>'}</td>
     <td>${r.block}</td><td>${r.ace}</td>
-    <td>${r.serveMiss||'<span class="dim">0</span>'}</td></tr>`).join("");
+    <td>${r.serveMiss||'<span class="dim">0</span>'}</td><td class="chev">›</td></tr>`).join("");
   const recorded=playerStats(t).reduce((s,r)=>s+r.points,0);
   body.innerHTML=`
     <div class="stat-total"><div><span class="lbl">チーム総得点</span> <span class="big">${teamTotalPoints(t)}</span></div>
       <div style="text-align:right"><span class="lbl">選手に記録した得点</span> <span class="big">${recorded}</span></div></div>
     <div style="overflow-x:auto"><table class="stbl">
-      <thead><tr><th>選手</th><th>得点</th><th>決定率</th><th>決定</th><th>ﾐｽ</th><th>ﾌﾞﾛｯｸ</th><th>ｴｰｽ</th><th>ｻｰﾌﾞ失</th></tr></thead>
+      <thead><tr><th>選手</th><th>得点</th><th>決定率</th><th>決定</th><th>ﾐｽ</th><th>ﾌﾞﾛｯｸ</th><th>ｴｰｽ</th><th>ｻｰﾌﾞ失</th><th></th></tr></thead>
       <tbody>${body_rows}</tbody></table></div>
-    <p class="hint" style="margin-top:14px">決定率＝決定 ÷（決定＋スパイクミス）。試行0本は「-」。「得点」＝スパイク＋ブロック＋サービスエース。相手ミス・未記録分はチーム総得点にのみ入ります。被ブロックや配球の詳細は「🏐配球」で記録します。</p>
-    <div class="sp-label" style="margin-top:16px">得点の経過（1点ずつ）</div>
-    ${renderPointLog(state.events, state.teams, state.rosters)}`;
+    <p class="hint" style="margin-top:12px">行をタップで個人詳細。決定率＝決定÷（決定＋スパイクミス）。得点＝スパイク＋ブロック＋サービスエース。</p>`;
+}
+function renderChartStats(){
+  const body=document.getElementById("statsBody"), t=statsTeam, skill=statsSkill;
+  const label={serve:"サービスエース",spike:"スパイク決定",block:"ブロック"}[skill];
+  const sub=`<div class="skillsub" id="chartSkillSub">
+    <button data-s="serve" class="${skill==="serve"?"active":""}">サーブ</button>
+    <button data-s="spike" class="${skill==="spike"?"active":""}">スパイク</button>
+    <button data-s="block" class="${skill==="block"?"active":""}">ブロック</button></div>`;
+  const scoreRes={serve:"ace",spike:"kill"};
+  const ps=state.plays.filter(x=>x.skill===skill && x.team===t && (skill==="block"||x.result===scoreRes[skill]));
+  if(!ps.length){ body.innerHTML=sub+`<div class="stat-empty">${label}の配球記録がまだありません。<br>得点入力で ${label} を選ぶと、コートで「どこ」を記録できます。</div>`;
+    document.querySelectorAll("#chartSkillSub button").forEach(b=>b.addEventListener("click",()=>{ statsSkill=b.dataset.s; renderStats(); })); return; }
+  // per-player counts
+  const perP=state.rosters[t].map(p=>({p, n:ps.filter(x=>x.player===playerKey(p)).length})).filter(x=>x.n>0).sort((a,b)=>b.n-a.n);
+  const plist=perP.map(({p,n})=>`<div class="pd-row"><span>${p.num?`<b>${esc(p.num)}</b> `:""}${esc(p.name||"–")}</span><span class="v">${n}本</span></div>`).join("");
+  // heatmap
+  let heatHtml="";
+  if(skill==="block"){
+    const c=[0,0,0]; ps.forEach(x=>{ if(x.to!=null&&x.to<3) c[x.to]++; });
+    const mx=Math.max(1,...c);
+    heatHtml=`<div class="sp-label">ブロックした位置</div><div class="ms-blockrow" style="margin-top:4px">
+      ${["左","中","右"].map((L,i)=>`<div style="padding:16px 6px;border-radius:12px;text-align:center;font-weight:800;background:${heatColor(c[i],mx)};border:1px solid var(--line)">${L}<div style="font-size:1.2rem">${c[i]}</div></div>`).join("")}</div>`;
+  } else {
+    const counts=Array(9).fill(0); ps.forEach(x=>{ if(x.to!=null) counts[x.to]++; });
+    const mx=Math.max(1,...counts);
+    const heat=counts.map(c=>`<div class="zone"><div class="hm" style="background:${heatColor(c,mx)}"></div><span class="hmn" style="${c?'color:#fff':''}">${c||""}</span></div>`).join("");
+    heatHtml=`<div class="sp-label">決めた場所（相手コート）</div><div class="half opp" style="margin-top:4px">${heat}</div>
+      <div class="hm-key"><span>少</span><i style="background:${HEAT[0]}"></i><i style="background:${HEAT[1]}"></i><i style="background:${HEAT[2]}"></i><i style="background:${HEAT[3]}"></i><span>多</span></div>`;
+    if(skill==="spike"){
+      const types={}; ps.forEach(x=>{ const ty=x.type||"（種類なし）"; types[ty]=(types[ty]||0)+1; });
+      const tlist=Object.entries(types).sort((a,b)=>b[1]-a[1]).map(([ty,n])=>`<div class="pd-row"><span>${esc(ty)}</span><span class="v">${n}本</span></div>`).join("");
+      heatHtml+=`<div class="sp-label" style="margin-top:14px">攻撃の種類別（決定）</div>${tlist}`;
+    }
+  }
+  body.innerHTML=sub+`<div class="sp-label">${label}を決めた本数（選手別）</div>${plist}${heatHtml}
+    <p class="hint" style="margin-top:12px">※得点になったプレーの配球です。成功率・有効率（全本数が必要）は現在の入力方式では算出していません。</p>`;
+  document.querySelectorAll("#chartSkillSub button").forEach(b=>b.addEventListener("click",()=>{ statsSkill=b.dataset.s; renderStats(); }));
+}
+function renderLogStats(){
+  document.getElementById("statsBody").innerHTML=`<div class="sp-label">得点の経過（1点ずつ）</div>${renderPointLog(state.events, state.teams, state.rosters)}`;
+}
+function openPlayerDetail(key){ statsDetailKey=key; renderStats(); }
+function renderPlayerDetail(){
+  const t=statsTeam, key=statsDetailKey, body=document.getElementById("statsBody");
+  const p=state.rosters[t].find(x=>playerKey(x)===key);
+  const st=playerStats(t).find((r,i)=>playerKey(state.rosters[t][i])===key) || {points:0,kill:0,spikeMiss:0,block:0,ace:0,serveMiss:0,rate:null};
+  const rateTxt = st.rate==null?"-":Math.round(st.rate*100)+"%";
+  const servePlays=state.plays.filter(x=>x.skill==="serve"&&x.team===t&&x.player===key&&x.result==="ace");
+  const spikePlays=state.plays.filter(x=>x.skill==="spike"&&x.team===t&&x.player===key&&x.result==="kill");
+  const blockPlays=state.plays.filter(x=>x.skill==="block"&&x.team===t&&x.player===key);
+  const nm = p ? (p.num?`<span class="no">#${esc(p.num)}</span>`:"")+esc(p.name||(p.num?"":"選手")) : "選手";
+  let html=`<div class="pd-head"><button class="pd-back" id="pdBack">← 一覧へ</button><div class="pd-name">${nm}</div></div>
+    <div class="pd-grid">
+      <div class="pd-cell"><div class="l">得点</div><div class="v">${st.points}</div></div>
+      <div class="pd-cell"><div class="l">決定率</div><div class="v ${st.rate>=0.5?'g':''}">${rateTxt}</div></div>
+      <div class="pd-cell"><div class="l">スパイク決定</div><div class="v">${st.kill}</div></div>
+      <div class="pd-cell"><div class="l">ブロック</div><div class="v">${st.block}</div></div>
+      <div class="pd-cell"><div class="l">サービスエース</div><div class="v">${st.ace}</div></div>
+      <div class="pd-cell"><div class="l">スパイクミス</div><div class="v">${st.spikeMiss}</div></div>
+    </div>`;
+  if(spikePlays.length){
+    const types={}; spikePlays.forEach(x=>{ const ty=x.type||"（種類なし）"; types[ty]=(types[ty]||0)+1; });
+    html+=`<div class="pd-sec">スパイク決定の内訳（種類別）</div>`+
+      Object.entries(types).sort((a,b)=>b[1]-a[1]).map(([ty,n])=>`<div class="pd-row"><span>${esc(ty)}</span><span class="v">${n}本</span></div>`).join("");
+    html+=miniHeat(spikePlays,"決めた場所（相手コート）");
+  }
+  if(servePlays.length) html+=`<div class="pd-sec">サービスエース ${servePlays.length}本</div>`+miniHeat(servePlays,"エースの配球");
+  if(blockPlays.length){
+    const c=[0,0,0]; blockPlays.forEach(x=>{ if(x.to!=null&&x.to<3) c[x.to]++; });
+    html+=`<div class="pd-sec">ブロック ${blockPlays.length}本（位置）</div><div class="ms-blockrow">${["左","中","右"].map((L,i)=>`<div style="padding:12px 6px;border-radius:10px;text-align:center;font-weight:800;background:var(--ink);border:1px solid var(--line)">${L}<div style="font-size:1.1rem">${c[i]}</div></div>`).join("")}</div>`;
+  }
+  if(!spikePlays.length&&!servePlays.length&&!blockPlays.length) html+=`<p class="hint">この選手の配球（方向）記録はまだありません。</p>`;
+  body.innerHTML=html;
+  document.getElementById("pdBack").addEventListener("click",()=>{ statsDetailKey=null; renderStats(); });
+}
+function miniHeat(plays, label){
+  const counts=Array(9).fill(0); plays.forEach(x=>{ if(x.to!=null) counts[x.to]++; });
+  const mx=Math.max(1,...counts);
+  const heat=counts.map(c=>`<div class="zone"><div class="hm" style="background:${heatColor(c,mx)}"></div><span class="hmn" style="${c?'color:#fff':''}">${c||""}</span></div>`).join("");
+  return `<div class="sp-label" style="margin-top:8px">${label}</div><div class="half opp" style="margin-top:4px">${heat}</div>`;
 }
 
 /* ---------- court charting (配球記録: サーブ / スパイク) ---------- */
@@ -1350,10 +1465,14 @@ function loadDemo(){
   state.completedSets=[{a:25,b:20}]; state.setNumber=2;   // 第1セット終了 + 第2セット途中(16-13)
   state.events=[...genSet(1,25,20), ...genSet(2,16,13)];
   state.teams[0].points=16; state.teams[1].points=13; state.serving=0;
-  // 配球デモ（サーブ/スパイク）
+  // 配球デモ: 得点イベント(決定/エース/ブロック)から、方向つきの配球を生成（実際の入力と同じ整合）
   const atkType=["オープン","Aクイック","Bクイック","バックアタック","オープン"];
-  for(let i=0;i<18;i++) state.plays.push({id:"pl-ds"+i, set:1, skill:"serve", team:0, player:pick(hSp), from:pick([6,7,8]), to:Math.floor(rnd()*9), result:pick(["ace","eff","ok","ok","ok","miss"])});
-  for(let i=0;i<20;i++) state.plays.push({id:"pl-da"+i, set:1, skill:"spike", team:0, player:pick(hSp), type:pick(atkType), from:pick([0,1,2]), to:Math.floor(rnd()*9), result:pick(["kill","kill","kill","blocked","miss","covered"])});
+  let pi=0;
+  state.events.forEach(ev=>{
+    if(ev.kind==="spike_kill") state.plays.push({id:"pl-"+(pi++), set:ev.set, skill:"spike", team:ev.team, player:ev.player, type:pick(atkType), from:pick([0,1,2]), to:Math.floor(rnd()*9), result:"kill"});
+    else if(ev.kind==="serve_ace") state.plays.push({id:"pl-"+(pi++), set:ev.set, skill:"serve", team:ev.team, player:ev.player, from:pick([6,7,8]), to:Math.floor(rnd()*9), result:"ace"});
+    else if(ev.kind==="block") state.plays.push({id:"pl-"+(pi++), set:ev.set, skill:"block", team:ev.team, player:ev.player, from:null, to:Math.floor(rnd()*3), result:"kill"});
+  });
   // 履歴のデモ試合（3-1、経過つき）
   const demoEvents=[...genSet(1,25,20),...genSet(2,23,25),...genSet(3,25,18),...genSet(4,25,22)];
   const demoMatch={ id:"demo-m1", date:"2026-07-20T10:30:00.000Z", bestOf:5,
@@ -1390,19 +1509,21 @@ document.querySelectorAll("#rosterTabs button").forEach(b=>b.addEventListener("c
   rosterTeam=+b.dataset.team; document.querySelectorAll("#rosterTabs button").forEach(x=>setTab(x,x===b)); renderRoster();
 }));
 
-document.getElementById("courtBtn").addEventListener("click",openCourt);
 document.getElementById("courtClose").addEventListener("click",closeCourt);
 document.getElementById("courtClose2").addEventListener("click",closeCourt);
 document.getElementById("courtClose3").addEventListener("click",closeCourt);
-document.getElementById("courtUndo").addEventListener("click",undoPlay);
-document.querySelectorAll("#courtTabs button").forEach(b=>b.addEventListener("click",()=>setCourtView(b.dataset.cv)));
-document.querySelectorAll("#courtSkill button").forEach(b=>b.addEventListener("click",()=>setSkill(b.dataset.skill)));
 document.getElementById("statsBtn").addEventListener("click",openStats);
 document.getElementById("closeStatsBtn").addEventListener("click",()=>{ statsSheet.classList.remove("show"); statsBg.classList.remove("show"); });
 statsBg.addEventListener("click",()=>{ statsSheet.classList.remove("show"); statsBg.classList.remove("show"); });
 document.querySelectorAll("#statsTabs button").forEach(b=>b.addEventListener("click",()=>{
-  statsTeam=+b.dataset.team; document.querySelectorAll("#statsTabs button").forEach(x=>setTab(x,x===b)); renderStats();
+  statsTeam=+b.dataset.team; statsDetailKey=null; document.querySelectorAll("#statsTabs button").forEach(x=>setTab(x,x===b)); renderStats();
 }));
+document.querySelectorAll("#statsView button").forEach(b=>b.addEventListener("click",()=>{
+  statsView=b.dataset.v; statsDetailKey=null; document.querySelectorAll("#statsView button").forEach(x=>x.classList.toggle("active",x===b)); renderStats();
+}));
+document.getElementById("statsBody").addEventListener("click",e=>{
+  const tr=e.target.closest("tr.tap"); if(tr && tr.dataset.pkey){ openPlayerDetail(tr.dataset.pkey); }
+});
 
 document.getElementById("historyBtn").addEventListener("click",openHistory);
 document.getElementById("closeHistBtn").addEventListener("click",()=>{ histSheet.classList.remove("show"); histBg.classList.remove("show"); });
