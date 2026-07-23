@@ -164,6 +164,15 @@ input{font-family:inherit;}
 .actstep2 .backrow{display:flex; align-items:center; gap:10px; margin-bottom:12px;}
 .actstep2 .backrow button{color:var(--muted); font-weight:700; font-size:.9rem;}
 .actstep2 .lead{font-size:.95rem; color:var(--muted); margin-bottom:12px;}
+/* mini court inside the point-entry panel (方向記録の統合) */
+.ms-hl{font-size:.68rem; color:var(--muted); text-align:center; margin:2px 0;}
+.half.ms{gap:4px;}
+.half.ms .zone{min-height:40px; aspect-ratio:auto;}
+#actStep3 .net-line{margin:2px 0;}
+.ms-blockrow{display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin:6px 0;}
+.ms-blockrow button{padding:16px 6px; border-radius:12px; background:var(--ink-3); border:1px solid rgba(88,166,255,.4); font-weight:800;}
+.ms-blockrow button:active{transform:scale(.96);}
+#act3Status{margin-top:8px;}
 .playergrid{display:grid; grid-template-columns:repeat(auto-fill,minmax(70px,1fr)); gap:10px; max-height:46vh; overflow-y:auto;}
 .pbtn{
   padding:12px 6px; border-radius:12px; background:var(--ink-3); border:1px solid var(--line);
@@ -199,6 +208,14 @@ input{font-family:inherit;}
 .row .bigbtn{flex:1; justify-content:center;}
 .danger{background:#3a2626; border-color:#5a2f2c; color:#f0b4b0;}
 .hint{font-size:.78rem; color:var(--muted); margin:-6px 0 16px; line-height:1.5;}
+.toggle-row{display:flex; align-items:center; gap:12px; width:100%; text-align:left; padding:12px 14px; border-radius:12px; background:var(--ink); border:1px solid var(--line);}
+.toggle-row .tr-text{flex:1; min-width:0;}
+.toggle-row .tr-t{font-weight:800; font-size:.95rem;}
+.toggle-row .tr-s{font-size:.72rem; color:var(--muted); margin-top:3px; line-height:1.4;}
+.tr-sw{flex:0 0 auto; width:46px; height:28px; border-radius:999px; background:var(--ink-3); border:1px solid var(--line); position:relative; transition:background .15s;}
+.tr-sw::after{content:""; position:absolute; top:2px; left:2px; width:22px; height:22px; border-radius:50%; background:#8090a3; transition:transform .15s, background .15s;}
+.toggle-row.on .tr-sw{background:var(--good); border-color:var(--good);}
+.toggle-row.on .tr-sw::after{transform:translateX(18px); background:#fff;}
 
 /* tabs (roster/stats) */
 .tabs{display:flex; gap:8px; margin-bottom:14px;}
@@ -430,6 +447,21 @@ input{font-family:inherit;}
       <div class="lead">だれの得点？</div>
       <div class="playergrid" id="playerGrid"></div>
     </div>
+    <div id="actStep3" class="actstep2" style="display:none">
+      <div class="backrow"><button id="actBack3">← もどる</button><span id="act3Label"></span></div>
+      <div id="msDir">
+        <div class="ms-hl">相手コート（どこへ）</div>
+        <div class="half opp ms" id="msOpp"></div>
+        <div class="net-line"><span>ネット</span></div>
+        <div class="half own ms" id="msOwn"></div>
+        <div class="ms-hl">自コート（どこから）</div>
+      </div>
+      <div id="msBlock" style="display:none">
+        <div class="ms-hl">どこでブロック？（ネット際）</div>
+        <div class="ms-blockrow" id="msBlockRow"></div>
+      </div>
+      <div class="court-status" id="act3Status"></div>
+    </div>
   </div>
 </div>
 
@@ -555,6 +587,16 @@ input{font-family:inherit;}
     </div>
   </div>
   <p class="hint" id="formatHint"></p>
+
+  <div class="field">
+    <label>得点入力</label>
+    <button class="toggle-row" id="dirInputToggle">
+      <div class="tr-text"><div class="tr-t">配球（方向）も記録する</div>
+        <div class="tr-s">サービスエース・スパイクは「どこから→どこへ」、ブロックは「どこで」を得点時に記録。相手のミスは場所なし。</div></div>
+      <span class="tr-sw" id="dirInputSw"></span>
+    </button>
+  </div>
+
   <div class="row">
     <button class="bigbtn danger" id="resetMatchBtn">試合をリセット</button>
     <button class="bigbtn" id="closeSheetBtn">閉じる</button>
@@ -586,6 +628,7 @@ const DEFAULT = () => ({
   rosters:[[],[]],          // per team: {num, name}
   events:[],                // {set, team, kind, actorTeam, player}  scoring terminal events
   plays:[],                 // 配球記録: {id, set, skill, team, player, from(0-8), to(0-8), result}
+  dirInput:true,            // 得点入力で方向（配球）も記録するか
   serving:null, setNumber:1, completedSets:[], matchOver:false, switchedThisSet:false, savedId:null,
 });
 
@@ -600,6 +643,7 @@ function migrate(s){
   if(!s.rosters) s.rosters=[[],[]];
   if(!s.events) s.events=[];
   if(!s.plays) s.plays=[];
+  if(s.dirInput===undefined) s.dirInput=true;
   // ensure every roster player has a stable id (fixes name-only players colliding)
   [0,1].forEach(t=>(s.rosters[t]||[]).forEach(p=>{ if(!p.pid) p.pid=pidGen(); }));
   // migrate old event schema {type} -> {kind, actorTeam}, and remap deprecated kinds
@@ -623,10 +667,12 @@ function isDecidingSet(){ const n=setsToWin(); return state.bestOf>1 && state.te
 function targetPoints(){ return isDecidingSet()?state.decidingPoints:state.pointsPerSet; }
 
 /* ---------- scoring ---------- */
-// t = scoring team; kind = terminal action; actorTeam = team of the credited/debited player; player = 背番号 or null
-function addPoint(t, kind, player, actorTeam){
+// t = scoring team; kind = terminal action; actorTeam = team of the credited/debited player; player = key or null
+// extraPlay: optional 配球 play recorded together (direction), so undo reverts both
+function addPoint(t, kind, player, actorTeam, extraPlay){
   if(state.matchOver) return;
   snapshot();
+  if(extraPlay) state.plays.push(extraPlay);
   state.events.push({set:state.setNumber, team:t, kind:kind||"point",
     actorTeam:(actorTeam===0||actorTeam===1)?actorTeam:null, player:(player!=null?player:null)});
   const team=state.teams[t];
@@ -699,15 +745,18 @@ function openActionPanel(t){
   document.getElementById("actErrLabel").textContent = `相手（${state.teams[1-t].name}）のミスで得点`;
   document.getElementById("actStep1").style.display="";
   document.getElementById("actStep2").style.display="none";
+  document.getElementById("actStep3").style.display="none";
   actWrap.classList.add("show");
 }
-function closeActionPanel(){ actWrap.classList.remove("show"); actTeam=null; }
+function closeActionPanel(){ actWrap.classList.remove("show"); actTeam=null; pend=null; }
+const DIR_KINDS=["serve_ace","spike_kill","block"];   // これらは方向記録(dirInput)の対象
+let pend=null, ms3From=null, ms3To=null;
+
 function chooseAction(kind){
   const t=actTeam;
   if(NOPLAYER_KINDS.includes(kind)){ closeActionPanel(); addPoint(t,kind,null,null); return; }
-  // decide which team the attributed player belongs to
   const actorTeam = POS_KINDS.includes(kind) ? t : 1-t;
-  if(!state.rosters[actorTeam] || state.rosters[actorTeam].length===0){ closeActionPanel(); addPoint(t,kind,null,actorTeam); return; }
+  if(!state.rosters[actorTeam] || state.rosters[actorTeam].length===0){ pickPlayer(kind,null,actorTeam); return; }
   document.getElementById("actKindLabel").textContent = KIND_LABEL[kind]||"";
   buildPlayerGrid(kind, actorTeam);
   document.getElementById("actStep2").querySelector(".lead").textContent =
@@ -717,17 +766,72 @@ function chooseAction(kind){
 }
 function buildPlayerGrid(kind, actorTeam){
   const grid=document.getElementById("playerGrid"); grid.innerHTML="";
-  const t=actTeam;
   state.rosters[actorTeam].forEach(p=>{
     const b=document.createElement("button"); b.className="pbtn";
     b.innerHTML=`<span class="num">${esc(p.num||p.name||"–")}</span>`+(p.num&&p.name?`<span class="pn">${esc(p.name)}</span>`:"");
-    b.addEventListener("click",()=>{ closeActionPanel(); addPoint(t,kind,playerKey(p),actorTeam); });
+    b.addEventListener("click",()=>pickPlayer(kind, playerKey(p), actorTeam));
     grid.appendChild(b);
   });
   const u=document.createElement("button"); u.className="pbtn unknown";
   u.innerHTML=`<span class="num">選手不明</span>`;
-  u.addEventListener("click",()=>{ closeActionPanel(); addPoint(t,kind,null,actorTeam); });
+  u.addEventListener("click",()=>pickPlayer(kind, null, actorTeam));
   grid.appendChild(u);
+}
+// after player is chosen: go to direction step if enabled & directional, else score immediately
+function pickPlayer(kind, player, actorTeam){
+  if(state.dirInput && DIR_KINDS.includes(kind)){ openStep3(kind, player, actorTeam); }
+  else { const t=actTeam; closeActionPanel(); addPoint(t,kind,player,actorTeam); }
+}
+function openStep3(kind, player, actorTeam){
+  pend={ t:actTeam, kind, player, actorTeam }; ms3From=null; ms3To=null;
+  const isBlock = kind==="block";
+  document.getElementById("msDir").style.display = isBlock?"none":"";
+  document.getElementById("msBlock").style.display = isBlock?"":"none";
+  document.getElementById("act3Label").textContent = KIND_LABEL[kind]||"";
+  if(isBlock){ buildBlockRow(); }
+  else { buildMsZones("msOpp","opp"); buildMsZones("msOwn","own"); }
+  updateAct3Status();
+  document.getElementById("actStep1").style.display="none";
+  document.getElementById("actStep2").style.display="none";
+  document.getElementById("actStep3").style.display="";
+}
+function buildMsZones(id,court){
+  const el=document.getElementById(id); el.innerHTML="";
+  for(let z=0;z<9;z++){ const b=document.createElement("button"); b.className="zone"; b.dataset.z=z;
+    b.innerHTML=`<span class="hmn">${z+1}</span>`;
+    b.addEventListener("click",()=>{ if(court==="own") ms3From=z; else ms3To=z; paintMsZones(); tryFinalizeDir(); });
+    el.appendChild(b); }
+  paintMsZones();
+}
+function paintMsZones(){
+  document.querySelectorAll("#msOwn .zone").forEach(el=>el.classList.toggle("sel-from",+el.dataset.z===ms3From));
+  document.querySelectorAll("#msOpp .zone").forEach(el=>el.classList.toggle("sel-to",+el.dataset.z===ms3To));
+  updateAct3Status();
+}
+function buildBlockRow(){
+  const el=document.getElementById("msBlockRow"); el.innerHTML="";
+  ["左","中","右"].forEach((lab,i)=>{ const b=document.createElement("button"); b.textContent=lab;
+    b.addEventListener("click",()=>finalizeBlock(i)); el.appendChild(b); });
+}
+function updateAct3Status(){
+  const st=document.getElementById("act3Status");
+  if(pend && pend.kind==="block"){ st.textContent="ブロックした位置をタップ"; return; }
+  st.textContent=[ ms3From!=null?`位置${ms3From+1}`:"① 自コート（どこから）", ms3To!=null?`→ ${ms3To+1}`:"→② 相手コート（どこへ）" ].join(" ・ ");
+}
+function tryFinalizeDir(){
+  if(ms3From==null || ms3To==null) return;
+  const skill = pend.kind==="serve_ace" ? "serve" : "spike";
+  const play={id:"pl"+Date.now(), set:state.setNumber, skill, team:pend.t, player:pend.player, from:ms3From, to:ms3To, result: skill==="serve"?"ace":"kill"};
+  if(skill==="spike") play.type=null;
+  finalizeScore(play);
+}
+function finalizeBlock(loc){
+  finalizeScore({id:"pl"+Date.now(), set:state.setNumber, skill:"block", team:pend.t, player:pend.player, from:null, to:loc, result:"kill"});
+}
+function finalizeScore(play){
+  const {t,kind,player,actorTeam}=pend; pend=null;
+  closeActionPanel();
+  addPoint(t, kind, player, actorTeam, play);   // 得点＋配球を同時記録（undoで両方戻る）
 }
 
 /* ---------- stats ---------- */
@@ -1001,7 +1105,8 @@ function renderSummary(){
     return {num:p.num, name:p.name, total:ps.length, cells:cfg.row(ps)};
   }).filter(r=>r.total>0).sort((a,b)=>b.total-a.total);
   const head=`<th>${cfg.chipHead}</th>`+cfg.cols.map(c=>`<th>${c}</th>`).join("");
-  const trows=stats.map(r=>`<tr><td>${r.num?`<span class="no">${esc(r.num)}</span> `:""}${esc(r.name||"–")}</td>${r.cells.map((c,i)=>`<td class="${i===1?'g':''}">${c}</td>`).join("")}</tr>`).join("");
+  const rowName=r=> r.num ? `<span class="no">${esc(r.num)}</span>${r.name?" "+esc(r.name):""}` : esc(r.name||"–");
+  const trows=stats.map(r=>`<tr><td>${rowName(r)}</td>${r.cells.map((c,i)=>`<td class="${i===1?'g':''}">${c}</td>`).join("")}</tr>`).join("");
   const rel=state.plays.filter(x=>x.skill===skill&&x.team===team&&(summaryFilter==null||x.player===summaryFilter));
   const counts=Array(9).fill(0); rel.forEach(x=>{ if(x.to!=null) counts[x.to]++; });
   const max=Math.max(1,...counts);
@@ -1124,7 +1229,9 @@ function openSheet(){
   document.getElementById("inpHome").value=state.teams[0].name;
   document.getElementById("inpAway").value=state.teams[1].name;
   document.querySelectorAll("#segFormat button").forEach(b=>b.classList.toggle("active",+b.dataset.bo===state.bestOf));
-  updateFormatHint(); renderMyTeamBox(); sheet.classList.add("show"); sheetBg.classList.add("show");
+  updateFormatHint(); renderMyTeamBox();
+  document.getElementById("dirInputToggle").classList.toggle("on", !!state.dirInput);
+  sheet.classList.add("show"); sheetBg.classList.add("show");
 }
 function closeSheet(){
   const hn=document.getElementById("inpHome").value.trim()||"ホーム";
@@ -1219,6 +1326,7 @@ document.getElementById("newMatchBtn").addEventListener("click",resetMatch);
 document.querySelectorAll("#actStep1 [data-act]").forEach(b=>b.addEventListener("click",()=>chooseAction(b.dataset.act)));
 document.getElementById("actClose").addEventListener("click",closeActionPanel);
 document.getElementById("actBack").addEventListener("click",()=>{ document.getElementById("actStep2").style.display="none"; document.getElementById("actStep1").style.display=""; });
+document.getElementById("actBack3").addEventListener("click",()=>{ document.getElementById("actStep3").style.display="none"; document.getElementById("actStep2").style.display="none"; document.getElementById("actStep1").style.display=""; ms3From=null; ms3To=null; pend=null; });
 actWrap.addEventListener("click",e=>{ if(e.target===actWrap) closeActionPanel(); });
 
 document.getElementById("rosterBtn").addEventListener("click",openRoster);
@@ -1256,6 +1364,7 @@ document.getElementById("histBody").addEventListener("click",e=>{
 });
 
 document.getElementById("settingsBtn").addEventListener("click",openSheet);
+document.getElementById("dirInputToggle").addEventListener("click",()=>{ state.dirInput=!state.dirInput; document.getElementById("dirInputToggle").classList.toggle("on",state.dirInput); persist(); toast(state.dirInput?"得点入力で方向も記録します":"方向記録をオフにしました"); });
 document.getElementById("closeSheetBtn").addEventListener("click",closeSheet);
 sheetBg.addEventListener("click",closeSheet);
 function hideSettings(){ sheet.classList.remove("show"); sheetBg.classList.remove("show"); }  // close WITHOUT re-saving name inputs
