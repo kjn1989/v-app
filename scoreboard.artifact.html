@@ -6,6 +6,8 @@
   --away:#2f9e9b; --away-d:#1f726f;
   --ball:#f4d03f;
   --danger:#e0524d;
+  /* semantic (AIBSS由来: 成功=緑 / ミス=赤 / 効果=琥珀 / タイトル=金) */
+  --good:#3fb950; --miss:#f85149; --warn:#d29922; --gold:#e3b341;
 }
 *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
 html,body{height:100%; margin:0;}
@@ -130,15 +132,25 @@ input{font-family:inherit;}
 .acthead .who{font-size:1.1rem; font-weight:800; display:flex; align-items:center; gap:8px;}
 .acthead .who .chip{width:14px; height:14px; border-radius:50%; background:var(--acc,#888);}
 .acthead .close{font-size:1.6rem; color:var(--muted); padding:2px 10px; line-height:1;}
-.actgrid{display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-bottom:10px;}
+.actsectlabel{font-size:.76rem; font-weight:800; color:var(--muted); letter-spacing:.03em; margin:4px 2px 8px;}
+.actsectlabel.plus{color:var(--good);}
+.actgrid{display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-bottom:6px;}
 .actbtn{
-  padding:16px 8px; border-radius:14px; background:var(--ink-3); border:1px solid var(--line);
-  font-size:1rem; font-weight:800; display:flex; flex-direction:column; align-items:center; gap:6px;
+  padding:15px 8px; border-radius:14px; background:var(--ink-3); border:1px solid var(--line);
+  font-size:.98rem; font-weight:800; display:flex; flex-direction:column; align-items:center; gap:6px;
 }
-.actbtn .emo{font-size:1.5rem;}
+.actbtn .emo{font-size:1.45rem;}
 .actbtn:active{transform:scale(.96);}
-.actrow2{display:grid; grid-template-columns:1fr 1fr; gap:10px;}
-.actbtn.ghost{background:transparent; border-style:dashed; color:var(--muted); font-size:.92rem; padding:13px;}
+.actbtn.g-kill{border-color:rgba(63,185,80,.5); box-shadow:inset 0 0 0 1px rgba(63,185,80,.25);}
+.actbtn.g-kill .emo{color:var(--good);}
+.actbtn.g-block .emo{color:var(--accent,#58a6ff);}
+.actbtn.g-ace{border-color:rgba(227,179,65,.5);}
+.actbtn.g-ace .emo{color:var(--gold);}
+.actgrid.err{margin:8px 0 6px;}
+.actbtn.err-b{padding:12px 6px; font-size:.86rem; background:transparent; border-style:dashed; color:#e6b3b0; gap:3px;}
+.actbtn.err-b .sub{font-size:.68rem; color:var(--muted); font-weight:600;}
+.actrow2{display:grid; grid-template-columns:1fr; gap:10px; margin-top:6px;}
+.actbtn.ghost{background:transparent; border-style:dashed; color:var(--muted); font-size:.9rem; padding:12px;}
 .actstep2 .backrow{display:flex; align-items:center; gap:10px; margin-bottom:12px;}
 .actstep2 .backrow button{color:var(--muted); font-weight:700; font-size:.9rem;}
 .actstep2 .lead{font-size:.95rem; color:var(--muted); margin-bottom:12px;}
@@ -204,6 +216,8 @@ input{font-family:inherit;}
 .stbl td .no{font-weight:800; min-width:26px; display:inline-block;}
 .stbl td .total{font-weight:800; color:var(--ball);}
 .stbl tr.top td{background:rgba(244,208,63,.06);}
+.stbl td .dim{color:#5b6c80;}
+.stbl td .hi{color:var(--good); font-weight:800;}
 .stat-empty{color:var(--muted); text-align:center; padding:26px 0; font-size:.9rem; line-height:1.6;}
 
 /* history */
@@ -285,13 +299,23 @@ input{font-family:inherit;}
       <button class="close" id="actClose">×</button>
     </div>
     <div id="actStep1">
+      <div class="actsectlabel plus" id="actPlusLabel">この得点を決めた</div>
       <div class="actgrid">
-        <button class="actbtn" data-act="spike"><span class="emo">⚡</span>スパイク</button>
-        <button class="actbtn" data-act="block"><span class="emo">🧱</span>ブロック</button>
-        <button class="actbtn" data-act="ace"><span class="emo">🎯</span>サーブ</button>
+        <button class="actbtn g-kill" data-act="spike_kill"><span class="emo">⚡</span>スパイク決定</button>
+        <button class="actbtn g-block" data-act="block"><span class="emo">🧱</span>ブロック</button>
+        <button class="actbtn g-ace" data-act="serve_ace"><span class="emo">🎯</span>サービスエース</button>
+      </div>
+      <div class="actsectlabel" id="actErrLabel">相手のミスで得点</div>
+      <div class="actgrid err">
+        <button class="actbtn err-b" data-act="spike_err">スパイクミス<span class="sub">相手のスパイクがアウト/ネット</span></button>
+        <button class="actbtn err-b" data-act="blocked">被ブロック<span class="sub">相手のスパイクを止めた</span></button>
+        <button class="actbtn err-b" data-act="serve_err">サーブミス<span class="sub">相手のサーブが失敗</span></button>
+      </div>
+      <div class="actgrid err" style="grid-template-columns:1fr 1fr;">
+        <button class="actbtn err-b" data-act="recept_err">レセプミス<span class="sub">サーブレシーブの乱れ</span></button>
+        <button class="actbtn err-b" data-act="other_err">その他のミス<span class="sub">ネットタッチ等</span></button>
       </div>
       <div class="actrow2">
-        <button class="actbtn ghost" data-act="opp_error">相手のミスで得点</button>
         <button class="actbtn ghost" data-act="point">得点のみ（記録なし）</button>
       </div>
     </div>
@@ -396,7 +420,19 @@ let state = load() || DEFAULT();
 let history = [];
 
 function load(){ try{ const s=JSON.parse(localStorage.getItem(LS_KEY)); return s&&s.teams?migrate(s):null; }catch(e){ return null; } }
-function migrate(s){ if(!s.rosters) s.rosters=[[],[]]; if(!s.events) s.events=[]; return s; }
+function migrate(s){
+  if(!s.rosters) s.rosters=[[],[]];
+  if(!s.events) s.events=[];
+  // migrate old event schema {type} -> {kind, actorTeam}
+  const map={spike:"spike_kill", block:"block", ace:"serve_ace", opp_error:"other_err", point:"point"};
+  s.events=s.events.map(e=>{
+    if(e.kind) return e;
+    const kind=map[e.type]||"point";
+    const actorTeam=["spike_kill","block","serve_ace"].includes(kind)?e.team:null;
+    return {set:e.set, team:e.team, kind, actorTeam, player:e.player!=null?e.player:null};
+  });
+  return s;
+}
 function persist(){ try{ localStorage.setItem(LS_KEY, JSON.stringify(state)); }catch(e){} }
 function snapshot(){ history.push(JSON.stringify(state)); if(history.length>250) history.shift(); }
 function commit(){ render(); persist(); }
@@ -406,10 +442,12 @@ function isDecidingSet(){ const n=setsToWin(); return state.bestOf>1 && state.te
 function targetPoints(){ return isDecidingSet()?state.decidingPoints:state.pointsPerSet; }
 
 /* ---------- scoring ---------- */
-function addPoint(t, type, player){
+// t = scoring team; kind = terminal action; actorTeam = team of the credited/debited player; player = 背番号 or null
+function addPoint(t, kind, player, actorTeam){
   if(state.matchOver) return;
   snapshot();
-  state.events.push({set:state.setNumber, team:t, type:type||"point", player:(player!=null?player:null)});
+  state.events.push({set:state.setNumber, team:t, kind:kind||"point",
+    actorTeam:(actorTeam===0||actorTeam===1)?actorTeam:null, player:(player!=null?player:null)});
   const team=state.teams[t];
   team.points++;
   state.serving=t;
@@ -458,52 +496,67 @@ function resetMatch(){
 /* ---------- point-entry action panel ---------- */
 const actWrap=document.getElementById("actWrap");
 let actTeam=null;
+const POS_KINDS=["spike_kill","block","serve_ace"];               // credited to the scoring team
+const NEG_KINDS=["spike_err","blocked","serve_err","recept_err"]; // debited to the erring (losing) team
+const KIND_LABEL={spike_kill:"⚡ スパイク決定", block:"🧱 ブロック", serve_ace:"🎯 サービスエース",
+  spike_err:"スパイクミス", blocked:"被ブロック", serve_err:"サーブミス", recept_err:"レセプミス"};
+
 function sideTapped(t){
   if(state.matchOver) return;
-  if(state.rosters[t] && state.rosters[t].length>0){ openActionPanel(t); }
-  else addPoint(t, "point", null);   // no roster -> instant point
+  // panel opens if EITHER team has a roster (positive=this team, error=the other team)
+  if((state.rosters[t]&&state.rosters[t].length)||(state.rosters[1-t]&&state.rosters[1-t].length)) openActionPanel(t);
+  else addPoint(t, "point", null, null);   // no rosters at all -> instant point
 }
 function openActionPanel(t){
   actTeam=t;
   const acc = t===0?getCss("--home"):getCss("--away");
   document.getElementById("actSheet").style.setProperty("--acc", acc);
   document.getElementById("actTeamName").textContent = state.teams[t].name;
+  document.getElementById("actErrLabel").textContent = `相手（${state.teams[1-t].name}）のミスで得点`;
   document.getElementById("actStep1").style.display="";
   document.getElementById("actStep2").style.display="none";
   actWrap.classList.add("show");
 }
 function closeActionPanel(){ actWrap.classList.remove("show"); actTeam=null; }
-function chooseAction(type){
-  if(type==="opp_error"||type==="point"){ const t=actTeam; closeActionPanel(); addPoint(t,type,null); return; }
-  // needs player -> step 2
-  const labels={spike:"⚡ スパイク", block:"🧱 ブロック", ace:"🎯 サーブ得点"};
-  document.getElementById("actKindLabel").textContent=labels[type]||"";
-  buildPlayerGrid(type);
+function chooseAction(kind){
+  const t=actTeam;
+  if(kind==="other_err"||kind==="point"){ closeActionPanel(); addPoint(t,kind,null,null); return; }
+  // decide which team the player belongs to
+  const actorTeam = POS_KINDS.includes(kind) ? t : 1-t;
+  if(!state.rosters[actorTeam] || state.rosters[actorTeam].length===0){ closeActionPanel(); addPoint(t,kind,null,actorTeam); return; }
+  document.getElementById("actKindLabel").textContent = KIND_LABEL[kind]||"";
+  buildPlayerGrid(kind, actorTeam);
+  document.getElementById("actStep2").querySelector(".lead").textContent =
+    POS_KINDS.includes(kind) ? "だれの得点？" : `${state.teams[actorTeam].name} のだれ？`;
   document.getElementById("actStep1").style.display="none";
   document.getElementById("actStep2").style.display="";
 }
-function buildPlayerGrid(type){
+function buildPlayerGrid(kind, actorTeam){
   const grid=document.getElementById("playerGrid"); grid.innerHTML="";
-  state.rosters[actTeam].forEach(p=>{
+  const t=actTeam;
+  state.rosters[actorTeam].forEach(p=>{
     const b=document.createElement("button"); b.className="pbtn";
     b.innerHTML=`<span class="num">${esc(p.num||"–")}</span>`+(p.name?`<span class="pn">${esc(p.name)}</span>`:"");
-    b.addEventListener("click",()=>{ const t=actTeam; closeActionPanel(); addPoint(t,type,p.num); });
+    b.addEventListener("click",()=>{ closeActionPanel(); addPoint(t,kind,p.num,actorTeam); });
     grid.appendChild(b);
   });
   const u=document.createElement("button"); u.className="pbtn unknown";
-  u.innerHTML=`<span class="num">背番号なし</span>`;
-  u.addEventListener("click",()=>{ const t=actTeam; closeActionPanel(); addPoint(t,type,null); });
+  u.innerHTML=`<span class="num">選手不明</span>`;
+  u.addEventListener("click",()=>{ closeActionPanel(); addPoint(t,kind,null,actorTeam); });
   grid.appendChild(u);
 }
 
 /* ---------- stats ---------- */
 function playerStats(t){
   return state.rosters[t].map(p=>{
-    const evs=state.events.filter(e=>e.team===t && e.player===p.num);
-    const spike=evs.filter(e=>e.type==="spike").length;
-    const block=evs.filter(e=>e.type==="block").length;
-    const ace=evs.filter(e=>e.type==="ace").length;
-    return {num:p.num, name:p.name, spike, block, ace, total:spike+block+ace};
+    const evs=state.events.filter(e=>e.actorTeam===t && e.player===p.num);
+    const c=k=>evs.filter(e=>e.kind===k).length;
+    const kill=c("spike_kill"), blocked=c("blocked"), spikeMiss=c("spike_err");
+    const attempts=kill+blocked+spikeMiss;
+    const block=c("block"), ace=c("serve_ace"), serveMiss=c("serve_err"), receptMiss=c("recept_err");
+    return {num:p.num, name:p.name, kill, blocked, spikeMiss, attempts,
+      rate: attempts>0 ? kill/attempts : null,          // 決定率 (分母0はnull→"-")
+      block, ace, serveMiss, receptMiss, points:kill+block+ace};
   });
 }
 function teamTotalPoints(t){
@@ -591,18 +644,24 @@ function renderStats(){
     body.innerHTML=`<div class="stat-empty">${esc(state.teams[t].name)} の選手が未登録です。<br>「👥 選手」から背番号を登録すると、<br>得点入力時に選手を選べてスタッツが貯まります。</div>`;
     return;
   }
-  const rows=playerStats(t).sort((x,y)=>y.total-x.total);
-  const topTotal=rows.length?rows[0].total:0;
-  const body_rows=rows.map(r=>`<tr class="${r.total>0&&r.total===topTotal?"top":""}">
+  const rows=playerStats(t).sort((x,y)=>y.points-x.points || (y.rate||0)-(x.rate||0));
+  const topPts=rows.length?rows[0].points:0;
+  const pct=r=> r.rate==null ? '<span class="dim">-</span>' : `<span class="${r.rate>=0.5?"hi":""}">${Math.round(r.rate*100)}%</span>`;
+  const body_rows=rows.map(r=>`<tr class="${r.points>0&&r.points===topPts?"top":""}">
     <td class="pl"><span class="no">${esc(r.num||"–")}</span><span>${esc(r.name||"")}</span></td>
-    <td class="total">${r.total}</td><td>${r.spike}</td><td>${r.block}</td><td>${r.ace}</td></tr>`).join("");
+    <td class="total">${r.points}</td>
+    <td>${pct(r)}</td>
+    <td>${r.kill}</td><td>${r.blocked||'<span class="dim">0</span>'}</td><td>${r.spikeMiss||'<span class="dim">0</span>'}</td>
+    <td>${r.block}</td><td>${r.ace}</td>
+    <td>${r.serveMiss||'<span class="dim">0</span>'}</td><td>${r.receptMiss||'<span class="dim">0</span>'}</td></tr>`).join("");
+  const recorded=playerStats(t).reduce((s,r)=>s+r.points,0);
   body.innerHTML=`
     <div class="stat-total"><div><span class="lbl">チーム総得点</span> <span class="big">${teamTotalPoints(t)}</span></div>
-      <div style="text-align:right"><span class="lbl">記録した得点</span> <span class="big">${playerStats(t).reduce((s,r)=>s+r.total,0)}</span></div></div>
+      <div style="text-align:right"><span class="lbl">選手に記録した得点</span> <span class="big">${recorded}</span></div></div>
     <div style="overflow-x:auto"><table class="stbl">
-      <thead><tr><th>選手</th><th>得点</th><th>ｽﾊﾟｲｸ</th><th>ﾌﾞﾛｯｸ</th><th>ｻｰﾌﾞ</th></tr></thead>
+      <thead><tr><th>選手</th><th>得点</th><th>決定率</th><th>決定</th><th>被BL</th><th>ﾐｽ</th><th>ﾌﾞﾛｯｸ</th><th>ｴｰｽ</th><th>ｻｰﾌﾞ失</th><th>ﾚｾﾌﾟ失</th></tr></thead>
       <tbody>${body_rows}</tbody></table></div>
-    <p class="hint" style="margin-top:14px">※「得点」はスパイク・ブロック・サーブ得点の合計。相手のミスや未記録の得点はチーム総得点にのみ入ります。</p>`;
+    <p class="hint" style="margin-top:14px">決定率＝決定 ÷（決定＋被ブロック＋スパイクミス）。試行0本は「-」。「得点」＝スパイク決定＋ブロック＋サービスエース。相手ミス・未記録分はチーム総得点にのみ入ります。</p>`;
 }
 
 /* ---------- match history ---------- */
@@ -620,7 +679,7 @@ function topScorer(m){
   if(!m.events||!m.events.length) return null;
   let best=null;
   m.teams.forEach((tm,t)=>{ (m.rosters?m.rosters[t]:[]).forEach(p=>{
-    const tot=m.events.filter(e=>e.team===t&&e.player===p.num&&["spike","block","ace"].includes(e.type)).length;
+    const tot=m.events.filter(e=>e.actorTeam===t&&e.player===p.num&&["spike_kill","block","serve_ace"].includes(e.kind)).length;
     if(tot>0&&(!best||tot>best.total)) best={num:p.num,name:p.name,total:tot,team:tm.name};
   }); });
   return best;
